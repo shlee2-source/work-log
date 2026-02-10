@@ -1,0 +1,1257 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>월간 근로자 서류 제출 시스템</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Noto Sans KR', sans-serif; background-color: #fafafa; color: #2d2d2d; min-height: 100vh; font-weight: 400; letter-spacing: -0.02em; }
+
+        /* ========== 로그인 ========== */
+        .login-screen { display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #f5f5f5; }
+        .login-box { background: white; border-radius: 20px; padding: 56px 48px; width: 420px; max-width: 92%; box-shadow: 0 4px 40px rgba(0,0,0,0.06); text-align: center; border: 1px solid #eee; }
+        .login-box .login-icon { width: 56px; height: 56px; background: #4a9b7f; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 24px; font-size: 24px; color: white; }
+        .login-box h2 { font-size: 20px; color: #2d2d2d; margin-bottom: 6px; font-weight: 600; letter-spacing: -0.03em; }
+        .login-box .login-desc { font-size: 13px; color: #999; margin-bottom: 36px; font-weight: 300; }
+        .login-box .login-input-group { margin-bottom: 20px; text-align: left; }
+        .login-box .login-input-group label { display: block; font-size: 12px; font-weight: 500; color: #888; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em; }
+        .login-box .login-input-group input { width: 100%; padding: 14px 16px; border: 1px solid #e5e5e5; border-radius: 12px; font-size: 15px; color: #2d2d2d; transition: all 0.2s; font-family: inherit; background: #fafafa; }
+        .login-box .login-input-group input:focus { outline: none; border-color: #4a9b7f; background: white; box-shadow: 0 0 0 3px rgba(74, 155, 127, 0.08); }
+        .login-box .login-input-group input::placeholder { color: #ccc; font-weight: 300; }
+        .login-btn { width: 100%; padding: 15px; background: #4a9b7f; color: white; border: none; border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.3s; font-family: inherit; letter-spacing: -0.01em; }
+        .login-btn:hover { background: #3d8269; box-shadow: 0 4px 16px rgba(74, 155, 127, 0.25); }
+        .login-error { color: #e85d5d; font-size: 12px; margin-top: 8px; display: none; text-align: left; font-weight: 400; }
+
+        /* ========== 공통 레이아웃 ========== */
+        .main-screen { display: none; }
+        .header { background: white; color: #2d2d2d; padding: 20px 48px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
+        .header.admin-header { border-bottom: 2px solid #4a9b7f; }
+        .header-left h1 { font-size: 18px; font-weight: 600; letter-spacing: -0.03em; }
+        .header-left .sub-info { display: flex; gap: 16px; margin-top: 4px; font-size: 12px; color: #aaa; font-weight: 300; }
+        .header-right { display: flex; align-items: center; gap: 12px; }
+        .user-badge { color: #2d2d2d; font-size: 13px; font-weight: 500; }
+        .admin-badge { background: #4a9b7f; color: white; padding: 3px 10px; border-radius: 20px; font-size: 10px; font-weight: 600; letter-spacing: 0.08em; }
+        .logout-btn { background: transparent; border: 1px solid #ddd; color: #888; padding: 7px 16px; border-radius: 8px; font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: inherit; font-weight: 500; }
+        .logout-btn:hover { border-color: #bbb; color: #555; }
+        .container { max-width: 1100px; margin: 0 auto; padding: 32px 24px; }
+
+        /* 탭 */
+        .tab-nav { display: flex; gap: 0; margin-bottom: 0; border-bottom: 1px solid #eee; flex-wrap: wrap; }
+        .tab-btn { padding: 14px 24px; border: none; background: transparent; color: #aaa; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s; position: relative; font-family: inherit; letter-spacing: -0.01em; }
+        .tab-btn:hover { color: #555; }
+        .tab-btn.active { color: #2d2d2d; font-weight: 600; }
+        .tab-btn.active::after { content: ''; position: absolute; bottom: -1px; left: 0; right: 0; height: 2px; background: #4a9b7f; }
+        .tab-content { background: white; border-radius: 0 0 16px 16px; padding: 32px; border: 1px solid #eee; border-top: none; display: none; }
+        .tab-content.active { display: block; }
+        .section-title { font-size: 18px; font-weight: 600; color: #2d2d2d; margin-bottom: 4px; letter-spacing: -0.03em; }
+        .section-desc { font-size: 13px; color: #aaa; margin-bottom: 28px; font-weight: 300; }
+
+        /* 폼 */
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; font-size: 12px; font-weight: 500; color: #888; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.03em; }
+        .form-group label .required { color: #e85d5d; margin-left: 2px; }
+        .form-group input[type="text"], .form-group input[type="date"], .form-group input[type="time"],
+        .form-group input[type="password"], .form-group select, .form-group textarea {
+            width: 100%; padding: 12px 16px; border: 1px solid #e5e5e5; border-radius: 10px; font-size: 14px;
+            color: #2d2d2d; transition: all 0.2s; font-family: inherit; background: #fafafa;
+        }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: #4a9b7f; background: white; box-shadow: 0 0 0 3px rgba(74,155,127,0.08); }
+        .form-group textarea { resize: vertical; min-height: 100px; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+        /* 버튼 */
+        .btn { padding: 11px 24px; border: none; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.25s; font-family: inherit; letter-spacing: -0.01em; }
+        .btn-primary { background: #4a9b7f; color: white; }
+        .btn-primary:hover { background: #3d8269; box-shadow: 0 4px 12px rgba(74,155,127,0.2); }
+        .btn-secondary { background: #f5f5f5; color: #888; border: 1px solid #e5e5e5; }
+        .btn-secondary:hover { background: #eee; color: #555; }
+        .btn-danger { background: white; color: #e85d5d; padding: 8px 16px; font-size: 12px; border: 1px solid #f5c6c6; }
+        .btn-danger:hover { background: #fff5f5; border-color: #e85d5d; }
+        .btn-sm { padding: 6px 14px; font-size: 12px; }
+        .btn-download { background: #eef7f3; color: #4a9b7f; border: 1px solid #c8e6d8; padding: 5px 12px; font-size: 11px; border-radius: 8px; cursor: pointer; font-family: inherit; font-weight: 600; transition: all 0.2s; }
+        .btn-download:hover { background: #d4ebe0; }
+        .btn-edit { background: #fff8ee; color: #d4940a; border: 1px solid #f0ddb0; padding: 6px 14px; font-size: 12px; border-radius: 8px; cursor: pointer; font-family: inherit; font-weight: 600; transition: all 0.2s; }
+        .btn-edit:hover { background: #fdf0d5; }
+        .btn-group { display: flex; gap: 10px; margin-top: 24px; }
+
+        /* 업무 일지 항목 */
+        .work-log-entry { border: 1px solid #eee; border-radius: 14px; padding: 24px; margin-bottom: 16px; background: white; position: relative; transition: box-shadow 0.2s; }
+        .work-log-entry:hover { box-shadow: 0 2px 12px rgba(0,0,0,0.04); }
+        .work-log-entry .entry-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .work-log-entry .entry-number { font-size: 12px; font-weight: 600; color: #4a9b7f; background: #eef7f3; padding: 4px 14px; border-radius: 20px; letter-spacing: 0.02em; }
+        .remove-entry-btn { background: none; border: none; color: #ccc; font-size: 20px; cursor: pointer; padding: 4px 8px; border-radius: 6px; transition: all 0.2s; }
+        .remove-entry-btn:hover { color: #e85d5d; background: #fff5f5; }
+        .add-entry-btn { width: 100%; padding: 16px; border: 1.5px dashed #ddd; border-radius: 14px; background: transparent; color: #aaa; font-size: 13px; cursor: pointer; transition: all 0.25s; font-family: inherit; font-weight: 500; }
+        .add-entry-btn:hover { border-color: #4a9b7f; color: #4a9b7f; background: #f8fdfb; }
+
+        /* 업무일지 파일 업로드 (소형) */
+        .entry-file-area { border: 1.5px dashed #e5e5e5; border-radius: 10px; padding: 16px; text-align: center; cursor: pointer; transition: all 0.2s; background: #fafafa; margin-top: 4px; }
+        .entry-file-area:hover { border-color: #4a9b7f; background: #f8fdfb; }
+        .entry-file-area.has-file { border-style: solid; border-color: #c8e6d8; background: #f4faf7; }
+        .entry-file-area .ef-icon { font-size: 24px; margin-bottom: 4px; }
+        .entry-file-area .ef-text { font-size: 12px; color: #aaa; font-weight: 400; }
+        .entry-file-area input[type="file"] { display: none; }
+        .entry-file-info { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+        .entry-file-info .ef-name { font-size: 13px; color: #4a9b7f; font-weight: 500; }
+        .entry-file-info .ef-remove { background: none; border: none; color: #ccc; font-size: 16px; cursor: pointer; padding: 2px 6px; border-radius: 4px; }
+        .entry-file-info .ef-remove:hover { color: #e85d5d; }
+
+        /* 파일 업로드 (보험용) */
+        .file-upload-area { border: 1.5px dashed #ddd; border-radius: 14px; padding: 48px 20px; text-align: center; cursor: pointer; transition: all 0.3s; background: #fafafa; }
+        .file-upload-area:hover { border-color: #4a9b7f; background: #f8fdfb; }
+        .file-upload-area.drag-over { border-color: #4a9b7f; background: #eef7f3; }
+        .file-upload-area .upload-icon { font-size: 40px; margin-bottom: 12px; opacity: 0.6; }
+        .file-upload-area .upload-text { font-size: 14px; font-weight: 500; color: #888; margin-bottom: 6px; }
+        .file-upload-area .upload-hint { font-size: 12px; color: #bbb; font-weight: 300; }
+        .file-upload-area input[type="file"] { display: none; }
+        .uploaded-files { margin-top: 12px; }
+        .uploaded-file-item { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; background: #f4faf7; border-radius: 10px; margin-bottom: 8px; border: 1px solid #d4ebe0; }
+        .uploaded-file-info { display: flex; align-items: center; gap: 10px; }
+        .uploaded-file-info .file-icon { font-size: 22px; }
+        .uploaded-file-info .file-name { font-size: 13px; font-weight: 500; color: #2d2d2d; }
+        .uploaded-file-info .file-size { font-size: 11px; color: #aaa; }
+        .remove-file-btn { background: none; border: none; color: #ccc; font-size: 18px; cursor: pointer; padding: 4px; transition: color 0.2s; }
+        .remove-file-btn:hover { color: #e85d5d; }
+
+        /* 테이블 */
+        .history-table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+        .history-table th { background: #fafafa; padding: 12px 16px; text-align: left; font-size: 11px; font-weight: 600; color: #aaa; border-bottom: 1px solid #eee; text-transform: uppercase; letter-spacing: 0.05em; }
+        .history-table td { padding: 14px 16px; font-size: 13px; border-bottom: 1px solid #f5f5f5; color: #555; }
+        .history-table tr { transition: background 0.15s; }
+        .history-table tr.clickable-row { cursor: pointer; }
+        .history-table tr.clickable-row:hover { background: #f8fdfb; }
+        .status-badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; letter-spacing: 0.02em; }
+        .status-submitted { background: #eef7f3; color: #4a9b7f; }
+        .status-pending { background: #fff8ee; color: #d4940a; }
+        .status-rejected { background: #fff5f5; color: #e85d5d; }
+
+        /* 알림 */
+        .alert { padding: 14px 20px; border-radius: 12px; margin-bottom: 20px; font-size: 13px; display: none; font-weight: 500; }
+        .alert-success { background: #eef7f3; color: #3d8269; border: 1px solid #c8e6d8; }
+        .alert-error { background: #fff5f5; color: #d44; border: 1px solid #f5c6c6; }
+
+        /* 월 선택 */
+        .month-selector { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; padding: 14px 20px; background: #fafafa; border-radius: 12px; border: 1px solid #eee; flex-wrap: wrap; }
+        .month-selector label { font-weight: 500; font-size: 12px; color: #888; letter-spacing: 0.03em; }
+        .month-selector input[type="month"], .month-selector select { padding: 8px 14px; border: 1px solid #e5e5e5; border-radius: 8px; font-size: 13px; color: #2d2d2d; font-family: inherit; background: white; }
+
+        /* 안내 박스 */
+        .info-box { background: #f8fdfb; border-left: 3px solid #4a9b7f; padding: 16px 20px; border-radius: 0 12px 12px 0; margin-bottom: 24px; }
+        .info-box h4 { font-size: 13px; color: #4a9b7f; margin-bottom: 8px; font-weight: 600; }
+        .info-box ul { list-style: none; padding: 0; }
+        .info-box ul li { font-size: 12px; color: #888; padding: 3px 0 3px 16px; position: relative; font-weight: 400; }
+        .info-box ul li::before { content: '\2022'; color: #4a9b7f; position: absolute; left: 0; }
+        .info-box-warning { background: #fffaf2; border-left: 3px solid #e8a735; }
+        .info-box-warning h4 { color: #c58a1a; }
+        .info-box-warning ul li::before { color: #e8a735; }
+
+        /* 모달 */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.3); z-index: 1000; justify-content: center; align-items: center; backdrop-filter: blur(4px); }
+        .modal-overlay.active { display: flex; }
+        .modal { background: white; border-radius: 20px; padding: 36px; max-width: 520px; width: 92%; box-shadow: 0 20px 60px rgba(0,0,0,0.12); max-height: 90vh; overflow-y: auto; }
+        .modal h3 { font-size: 17px; margin-bottom: 12px; color: #2d2d2d; font-weight: 600; }
+        .modal p { font-size: 13px; color: #888; margin-bottom: 24px; line-height: 1.7; font-weight: 400; }
+        .modal .btn-group { justify-content: flex-end; }
+
+        /* 상세보기 모달 */
+        .detail-modal-content { max-height: 55vh; overflow-y: auto; }
+        .detail-modal-content .detail-item { padding: 16px 0; border-bottom: 1px solid #f0f0f0; }
+        .detail-modal-content .detail-item:last-child { border-bottom: none; }
+        .detail-modal-content .detail-label { font-size: 11px; color: #aaa; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
+        .detail-modal-content .detail-value { font-size: 14px; color: #2d2d2d; line-height: 1.6; }
+        .detail-modal-content .detail-file-badge { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; background: #eef7f3; border-radius: 8px; font-size: 12px; color: #4a9b7f; font-weight: 500; margin-top: 4px; cursor: default; }
+        .detail-entry-card { background: #fafafa; border-radius: 12px; padding: 16px 20px; margin-bottom: 10px; border: 1px solid #eee; }
+        .detail-entry-card .de-date { font-size: 12px; color: #4a9b7f; font-weight: 600; margin-bottom: 6px; }
+        .detail-entry-card .de-content { font-size: 13px; color: #555; line-height: 1.6; white-space: pre-wrap; }
+        .detail-entry-card .de-file { margin-top: 8px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+        /* 관리자 통계 카드 */
+        .stat-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 32px; }
+        .stat-card { background: white; border-radius: 16px; padding: 24px; border: 1px solid #eee; transition: box-shadow 0.2s; }
+        .stat-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.04); }
+        .stat-card .stat-label { font-size: 11px; color: #aaa; margin-bottom: 8px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; }
+        .stat-card .stat-value { font-size: 32px; font-weight: 700; color: #2d2d2d; letter-spacing: -0.03em; }
+        .stat-card .stat-sub { font-size: 11px; color: #bbb; margin-top: 4px; font-weight: 400; }
+
+        /* 근로자 카드 */
+        .worker-card { border: 1px solid #eee; border-radius: 14px; margin-bottom: 12px; overflow: hidden; background: white; transition: box-shadow 0.2s; }
+        .worker-card:hover { box-shadow: 0 2px 12px rgba(0,0,0,0.04); }
+        .worker-card-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 24px; cursor: pointer; transition: background 0.15s; }
+        .worker-card-header:hover { background: #fafafa; }
+        .worker-card-header .worker-name { font-size: 15px; font-weight: 600; color: #2d2d2d; }
+        .worker-card-header .worker-summary { display: flex; gap: 8px; align-items: center; }
+        .worker-card-header .worker-summary span { font-size: 11px; padding: 4px 12px; border-radius: 20px; font-weight: 600; }
+        .worker-card-body { display: none; padding: 20px 24px; border-top: 1px solid #f0f0f0; }
+        .worker-card-body.open { display: block; }
+
+        /* 달력 */
+        .calendar { margin-top: 12px; }
+        .calendar-title { font-size: 13px; font-weight: 600; color: #555; margin-bottom: 10px; }
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
+        .calendar-grid .cal-header { text-align: center; font-size: 10px; font-weight: 600; color: #bbb; padding: 8px 0; }
+        .calendar-grid .cal-day { text-align: center; padding: 10px 4px; font-size: 12px; border-radius: 8px; font-weight: 500; }
+        .calendar-grid .cal-day.empty { background: transparent; }
+        .calendar-grid .cal-day.weekend { color: #ddd; background: #fafafa; }
+        .calendar-grid .cal-day.written { background: #eef7f3; color: #4a9b7f; }
+        .calendar-grid .cal-day.not-written { background: #fff5f5; color: #e85d5d; }
+        .calendar-grid .cal-day.future { color: #ddd; background: #fafafa; }
+        .calendar-legend { display: flex; gap: 16px; margin-top: 14px; font-size: 11px; color: #aaa; }
+        .calendar-legend span { display: flex; align-items: center; gap: 5px; }
+        .legend-dot { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+        .legend-dot.written { background: #eef7f3; border: 1px solid #b5dcc9; }
+        .legend-dot.not-written { background: #fff5f5; border: 1px solid #f5c6c6; }
+        .legend-dot.weekend { background: #fafafa; border: 1px solid #eee; }
+        .legend-dot.future { background: #fafafa; border: 1px solid #eee; }
+        .detail-section { margin-top: 20px; }
+        .detail-section h4 { font-size: 13px; font-weight: 600; color: #888; margin-bottom: 10px; }
+
+        /* 인원 관리 */
+        .worker-add-form { display: flex; gap: 10px; margin-bottom: 24px; align-items: flex-end; flex-wrap: wrap; }
+        .worker-add-form .form-group { margin-bottom: 0; flex: 1; min-width: 120px; }
+        .worker-add-form .btn { height: 44px; white-space: nowrap; }
+        .worker-list-item { display: flex; align-items: center; justify-content: space-between; padding: 14px 20px; border: 1px solid #eee; border-radius: 12px; margin-bottom: 8px; background: white; transition: all 0.2s; }
+        .worker-list-item:hover { border-color: #ddd; box-shadow: 0 2px 8px rgba(0,0,0,0.03); }
+        .worker-list-item .worker-list-name { font-size: 14px; font-weight: 600; color: #2d2d2d; }
+        .worker-list-item .worker-list-date { font-size: 11px; color: #bbb; font-weight: 400; }
+        .worker-list-item .worker-list-role { font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: 600; margin-left: 8px; }
+        .worker-list-item .worker-list-info { display: flex; align-items: center; gap: 12px; }
+        .worker-list-item .worker-list-actions { display: flex; gap: 6px; align-items: center; }
+        .worker-count-badge { background: #eef7f3; color: #4a9b7f; padding: 6px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; display: inline-block; margin-bottom: 20px; }
+
+        /* 비밀번호 변경 인라인 */
+        .pw-change-inline { display: flex; gap: 6px; align-items: center; margin-top: 8px; }
+        .pw-change-inline input { padding: 6px 12px; border: 1px solid #e5e5e5; border-radius: 8px; font-size: 12px; width: 140px; font-family: inherit; }
+        .pw-change-inline input:focus { outline: none; border-color: #4a9b7f; }
+        .role-dropdown { padding: 6px 12px; border: 1px solid #e5e5e5; border-radius: 8px; font-size: 12px; font-family: inherit; background: white; color: #555; cursor: pointer; }
+        .role-dropdown:focus { outline: none; border-color: #4a9b7f; }
+
+        /* 반응형 */
+        @media (max-width: 768px) {
+            .header { padding: 16px 20px; flex-direction: column; gap: 12px; }
+            .header-right { width: 100%; justify-content: flex-end; }
+            .container { padding: 20px 12px; }
+            .tab-btn { padding: 12px 14px; font-size: 12px; }
+            .tab-content { padding: 24px 16px; }
+            .form-row { grid-template-columns: 1fr; }
+            .btn-group { flex-direction: column; }
+            .btn { width: 100%; text-align: center; }
+            .login-box { padding: 40px 24px; }
+            .stat-cards { grid-template-columns: 1fr 1fr; }
+            .worker-card-header { flex-direction: column; gap: 8px; align-items: flex-start; }
+            .worker-add-form { flex-direction: column; }
+            .worker-add-form .btn { width: 100%; }
+            .modal { padding: 28px 20px; margin: 0 8px; }
+            .worker-list-item { flex-direction: column; gap: 10px; align-items: flex-start; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 로그인 -->
+    <div class="login-screen" id="loginScreen">
+        <div class="login-box">
+            <div class="login-icon">&#128100;</div>
+            <h2>서류 제출 시스템</h2>
+            <p class="login-desc">이름과 비밀번호를 입력하여 로그인해 주세요.</p>
+            <div class="login-input-group">
+                <label>이름</label>
+                <input type="text" id="loginName" placeholder="이름을 입력하세요" autofocus onkeydown="handleLoginKey(event)">
+            </div>
+            <div class="login-input-group" id="passwordGroup">
+                <label>비밀번호</label>
+                <input type="password" id="loginPassword" placeholder="비밀번호를 입력하세요" onkeydown="handleLoginKey(event)">
+            </div>
+            <div class="login-error" id="loginError"></div>
+            <button class="login-btn" onclick="login()">로그인</button>
+        </div>
+    </div>
+
+    <!-- 근로자 메인 -->
+    <div class="main-screen" id="mainScreen">
+        <div class="header">
+            <div class="header-left">
+                <h1>서류 제출 시스템</h1>
+                <div class="sub-info"><span id="currentDate"></span></div>
+            </div>
+            <div class="header-right">
+                <span class="user-badge" id="userBadge"></span>
+                <button class="logout-btn" onclick="logout()">로그아웃</button>
+            </div>
+        </div>
+        <div class="container">
+            <div class="alert alert-success" id="alertSuccess"></div>
+            <div class="alert alert-error" id="alertError"></div>
+            <div class="tab-nav">
+                <button class="tab-btn active" onclick="switchTab('worklog')">업무 일지</button>
+                <button class="tab-btn" onclick="switchTab('insurance')">건강보험 자격득실확인서</button>
+                <button class="tab-btn" onclick="switchTab('history')">제출 내역</button>
+                <button class="tab-btn" onclick="switchTab('mypage')">내 정보</button>
+            </div>
+
+            <div class="tab-content active" id="tab-worklog">
+                <h2 class="section-title">업무 일지 작성</h2>
+                <p class="section-desc">당월 업무 내용을 일자별로 기록해 주세요.</p>
+                <div class="info-box"><h4>작성 안내</h4><ul><li>근무일 기준으로 업무내용을 기록해 주세요.</li><li>필요한 경우 참고 파일을 첨부해주세요. (선택사항)</li></ul></div>
+                <div class="month-selector"><label>대상 월:</label><input type="month" id="worklogMonth"></div>
+                <form id="worklogForm">
+                    <div id="worklogEntries"></div>
+                    <button type="button" class="add-entry-btn" onclick="addWorklogEntry()">+ 업무 항목 추가</button>
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-secondary" onclick="resetWorklogForm()">초기화</button>
+                        <button type="button" class="btn btn-primary" id="worklogSubmitBtn" onclick="submitWorklog()">업무 일지 제출</button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="tab-content" id="tab-insurance">
+                <h2 class="section-title">건강보험 자격득실확인서 제출</h2>
+                <p class="section-desc">당월 건강보험 자격득실확인서를 업로드해 주세요.</p>
+                <div class="info-box info-box-warning"><h4>필수 제출 안내</h4><ul><li>건강보험 자격득실확인서는 매월 1회 필수로 제출해야 합니다.</li><li>건강보험공단 홈페이지 또는 정부24에서 발급받은 자격득실확인서를 제출해 주세요.</li><li>PDF, JPG, PNG 형식의 파일을 업로드할 수 있습니다.</li><li>파일 크기는 10MB 이하로 제한됩니다.</li><li>당월 발급분만 유효합니다.</li></ul></div>
+                <div class="month-selector"><label>대상 월:</label><input type="month" id="insuranceMonth"></div>
+                <form id="insuranceForm">
+                    <div class="form-group"><label>발급일자 <span class="required">*</span></label><input type="date" id="issueDate" required></div>
+                    <div class="form-group">
+                        <label>자격득실확인서 첨부 <span class="required">*</span></label>
+                        <div class="file-upload-area" id="fileUploadArea" onclick="document.getElementById('fileInput').click()">
+                            <div class="upload-icon">&#128196;</div>
+                            <div class="upload-text">파일을 드래그하거나 클릭하여 업로드</div>
+                            <div class="upload-hint">PDF, JPG, PNG (최대 10MB)</div>
+                            <input type="file" id="fileInput" accept=".pdf,.jpg,.jpeg,.png" onchange="handleFileSelect(event)">
+                        </div>
+                    </div>
+                    <div class="uploaded-files" id="uploadedFiles"></div>
+                    <div class="form-group"><label>비고</label><textarea id="insuranceNote" placeholder="특이사항이 있으면 기재해 주세요." rows="3"></textarea></div>
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-secondary" onclick="resetInsuranceForm()">초기화</button>
+                        <button type="button" class="btn btn-primary" onclick="submitInsurance()">확인서 제출</button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="tab-content" id="tab-history">
+                <h2 class="section-title">제출 내역 조회</h2>
+                <p class="section-desc">내역을 클릭하면 상세 내용을 확인할 수 있습니다.</p>
+                <div class="month-selector"><label>조회 월:</label><input type="month" id="historyMonth" onchange="loadHistory()"></div>
+                <table class="history-table"><thead><tr><th>제출일시</th><th>서류 종류</th><th>대상 월</th><th>상태</th><th></th></tr></thead><tbody id="historyBody"></tbody></table>
+                <div id="noHistory" style="text-align:center; padding:48px; color:#bbb; display:none; font-size:13px;">제출 내역이 없습니다.</div>
+            </div>
+
+            <div class="tab-content" id="tab-mypage">
+                <h2 class="section-title">내 정보</h2>
+                <p class="section-desc">비밀번호를 변경할 수 있습니다.</p>
+                <div style="max-width:400px;">
+                    <div class="form-group">
+                        <label>현재 비밀번호 <span class="required">*</span></label>
+                        <input type="password" id="myCurrentPw" placeholder="현재 비밀번호를 입력하세요">
+                    </div>
+                    <div class="form-group">
+                        <label>새 비밀번호 <span class="required">*</span></label>
+                        <input type="password" id="myNewPw" placeholder="새 비밀번호를 입력하세요">
+                    </div>
+                    <div class="form-group">
+                        <label>새 비밀번호 확인 <span class="required">*</span></label>
+                        <input type="password" id="myNewPwConfirm" placeholder="새 비밀번호를 다시 입력하세요">
+                    </div>
+                    <button class="btn btn-primary" onclick="changeMyPassword()">비밀번호 변경</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 관리자 화면 -->
+    <div class="main-screen" id="adminScreen">
+        <div class="header admin-header">
+            <div class="header-left">
+                <h1>관리자 대시보드</h1>
+                <div class="sub-info"><span id="adminDate"></span></div>
+            </div>
+            <div class="header-right">
+                <span class="admin-badge">ADMIN</span>
+                <span class="user-badge" id="adminBadge"></span>
+                <button class="logout-btn" onclick="logout()">로그아웃</button>
+            </div>
+        </div>
+        <div class="container">
+            <div class="alert alert-success" id="adminAlertSuccess"></div>
+            <div class="alert alert-error" id="adminAlertError"></div>
+            <div class="tab-nav">
+                <button class="tab-btn active" onclick="switchAdminTab('overview')">전체 현황</button>
+                <button class="tab-btn" onclick="switchAdminTab('submissions')">제출 내역</button>
+                <button class="tab-btn" onclick="switchAdminTab('worklog-tracker')">업무일지 현황</button>
+                <button class="tab-btn" onclick="switchAdminTab('workers')">인원 관리</button>
+            </div>
+
+            <div class="tab-content active" id="admin-tab-overview">
+                <h2 class="section-title">전체 현황</h2>
+                <p class="section-desc">근로자 서류 제출 요약 정보입니다.</p>
+                <div class="month-selector"><label>조회 월:</label><input type="month" id="adminOverviewMonth" onchange="loadAdminOverview()"></div>
+                <div class="stat-cards" id="statCards"></div>
+                <h3 style="font-size:14px; font-weight:600; color:#888; margin-bottom:12px; letter-spacing:0.02em;">근로자별 제출 현황</h3>
+                <table class="history-table"><thead><tr><th>근로자</th><th>업무 일지</th><th>자격득실확인서</th></tr></thead><tbody id="overviewBody"></tbody></table>
+                <div id="noOverview" style="text-align:center; padding:48px; color:#bbb; display:none; font-size:13px;">등록된 근로자가 없습니다.</div>
+            </div>
+
+            <div class="tab-content" id="admin-tab-submissions">
+                <h2 class="section-title">전체 제출 내역</h2>
+                <p class="section-desc">내역을 클릭하면 상세 내용과 첨부파일을 확인할 수 있습니다.</p>
+                <div class="month-selector">
+                    <label>조회 월:</label><input type="month" id="adminSubMonth" onchange="loadAdminSubmissions()">
+                    <label style="margin-left:16px;">근로자:</label>
+                    <select id="adminSubWorker" onchange="loadAdminSubmissions()"><option value="">전체</option></select>
+                </div>
+                <table class="history-table"><thead><tr><th>제출일시</th><th>성명</th><th>서류 종류</th><th>대상 월</th><th>상태</th></tr></thead><tbody id="adminSubBody"></tbody></table>
+                <div id="noAdminSub" style="text-align:center; padding:48px; color:#bbb; display:none; font-size:13px;">제출 내역이 없습니다.</div>
+            </div>
+
+            <div class="tab-content" id="admin-tab-worklog-tracker">
+                <h2 class="section-title">업무일지 작성 현황</h2>
+                <p class="section-desc">근로자별 업무 일지 작성 날짜를 달력으로 확인합니다.</p>
+                <div class="month-selector"><label>조회 월:</label><input type="month" id="adminCalMonth" onchange="loadWorklogTracker()"></div>
+                <div id="workerCalendars"></div>
+            </div>
+
+            <div class="tab-content" id="admin-tab-workers">
+                <h2 class="section-title">인원 관리</h2>
+                <p class="section-desc">근로자 및 관리자를 등록하고, 비밀번호를 관리합니다.</p>
+                <div class="info-box"><h4>안내</h4><ul><li>등록된 이름과 비밀번호로만 로그인이 가능합니다.</li><li>관리자로 등록하면 관리자 대시보드에 접근할 수 있습니다.</li><li>비밀번호는 관리자가 언제든 변경할 수 있습니다.</li><li>인원을 삭제해도 기존 제출 내역은 유지됩니다.</li></ul></div>
+                <div class="worker-add-form">
+                    <div class="form-group">
+                        <label>이름 <span class="required">*</span></label>
+                        <input type="text" id="newWorkerName" placeholder="이름" onkeydown="if(event.key==='Enter'){event.preventDefault();addWorker();}">
+                    </div>
+                    <div class="form-group">
+                        <label>비밀번호 <span class="required">*</span></label>
+                        <input type="text" id="newWorkerPw" placeholder="초기 비밀번호">
+                    </div>
+                    <div class="form-group">
+                        <label>구분</label>
+                        <select id="newWorkerRole"><option value="worker">근로자</option><option value="admin">관리자</option></select>
+                    </div>
+                    <button class="btn btn-primary" onclick="addWorker()">등록</button>
+                </div>
+                <div class="worker-count-badge" id="workerCountBadge"></div>
+                <div id="workerList"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 제출 확인 모달 -->
+    <div class="modal-overlay" id="confirmModal">
+        <div class="modal">
+            <h3 id="modalTitle">제출 확인</h3>
+            <p id="modalMessage">서류를 제출하시겠습니까?</p>
+            <div class="btn-group">
+                <button class="btn btn-secondary" onclick="closeModal()">취소</button>
+                <button class="btn btn-primary" id="modalConfirmBtn" onclick="confirmSubmit()">제출</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 삭제 확인 모달 -->
+    <div class="modal-overlay" id="deleteModal">
+        <div class="modal">
+            <h3 id="deleteModalTitle">삭제 확인</h3>
+            <p id="deleteModalMessage"></p>
+            <div class="btn-group">
+                <button class="btn btn-secondary" onclick="closeDeleteModal()">취소</button>
+                <button class="btn btn-danger" onclick="confirmDeleteWorker()">삭제</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 상세보기 모달 -->
+    <div class="modal-overlay" id="detailModal">
+        <div class="modal" style="max-width:640px;">
+            <h3 id="detailModalTitle">제출 상세</h3>
+            <div class="detail-modal-content" id="detailModalContent"></div>
+            <div class="btn-group" style="margin-top:20px;">
+                <button class="btn btn-secondary" onclick="closeDetailModal()">닫기</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 자격득실확인서 미제출 안내 모달 -->
+    <div class="modal-overlay" id="insuranceReminderModal">
+        <div class="modal">
+            <h3 style="color:#c58a1a;">&#9888; 자격득실확인서 미제출 안내</h3>
+            <p>당월 건강보험 자격득실확인서가 아직 제출되지 않았습니다.<br>건강보험공단 홈페이지 또는 정부24에서 발급받아 제출해 주세요.</p>
+            <div class="btn-group">
+                <button class="btn btn-secondary" onclick="closeInsuranceReminder()">나중에 하기</button>
+                <button class="btn btn-primary" onclick="goToInsuranceTab()">지금 제출하기</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 업무일지 수정 모달 -->
+    <div class="modal-overlay" id="editModal">
+        <div class="modal" style="max-width:640px;">
+            <h3 id="editModalTitle">업무 일지 수정</h3>
+            <div id="editModalContent"></div>
+            <div class="btn-group" style="margin-top:20px;">
+                <button class="btn btn-secondary" onclick="closeEditModal()">취소</button>
+                <button class="btn btn-primary" onclick="saveEditWorklog()">저장</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ========== 상태 ==========
+        const DEFAULT_ADMIN_NAME = '이상호';
+        const DEFAULT_ADMIN_PW = '0915';
+
+        let worklogEntryCount = 0;
+        let uploadedFile = null;
+        let pendingSubmitType = null;
+        let submissions = JSON.parse(localStorage.getItem('submissions') || '[]');
+        let worklogData = JSON.parse(localStorage.getItem('worklogData') || '[]');
+        let registeredWorkers = JSON.parse(localStorage.getItem('registeredWorkers') || '[]');
+        let currentUser = localStorage.getItem('currentUser') || '';
+        let isAdmin = localStorage.getItem('isAdmin') === 'true';
+        let pendingDeleteWorker = null;
+        let entryFiles = {};
+        let editingSubIdx = null; // 수정 중인 submission index
+        let editEntryFiles = {}; // 수정 모달용 파일
+
+        // 기본 관리자가 registeredWorkers에 없으면 추가 (마이그레이션)
+        (function initDefaultAdmin() {
+            if (!registeredWorkers.some(w => w.name === DEFAULT_ADMIN_NAME)) {
+                registeredWorkers.push({ name: DEFAULT_ADMIN_NAME, password: DEFAULT_ADMIN_PW, role: 'admin', registeredAt: '2024-01-01' });
+                localStorage.setItem('registeredWorkers', JSON.stringify(registeredWorkers));
+            } else {
+                // 기존 데이터에 password/role 없으면 보정
+                let changed = false;
+                registeredWorkers.forEach(w => {
+                    if (w.name === DEFAULT_ADMIN_NAME && !w.role) { w.role = 'admin'; w.password = w.password || DEFAULT_ADMIN_PW; changed = true; }
+                    if (!w.password) { w.password = '1234'; changed = true; }
+                    if (!w.role) { w.role = 'worker'; changed = true; }
+                });
+                if (changed) localStorage.setItem('registeredWorkers', JSON.stringify(registeredWorkers));
+            }
+        })();
+
+        // ========== 초기화 ==========
+        document.addEventListener('DOMContentLoaded', function() {
+            if (currentUser) {
+                if (isAdmin) showAdminScreen();
+                else showMainScreen();
+            }
+        });
+
+        // ========== 로그인 ==========
+        function handleLoginKey(event) { if (event.key === 'Enter') login(); }
+
+        function login() {
+            const name = document.getElementById('loginName').value.trim();
+            const pw = document.getElementById('loginPassword').value;
+            const errorEl = document.getElementById('loginError');
+
+            if (!name) { errorEl.textContent = '이름을 입력해 주세요.'; errorEl.style.display = 'block'; return; }
+            if (!pw) { errorEl.textContent = '비밀번호를 입력해 주세요.'; errorEl.style.display = 'block'; return; }
+
+            const user = registeredWorkers.find(w => w.name === name);
+            if (!user) {
+                errorEl.textContent = '등록되지 않은 사용자입니다. 관리자에게 문의하세요.';
+                errorEl.style.display = 'block';
+                return;
+            }
+            if (user.password !== pw) {
+                errorEl.textContent = '비밀번호가 일치하지 않습니다.';
+                errorEl.style.display = 'block';
+                return;
+            }
+
+            errorEl.style.display = 'none';
+            currentUser = name;
+            isAdmin = user.role === 'admin';
+            localStorage.setItem('currentUser', currentUser);
+            localStorage.setItem('isAdmin', isAdmin ? 'true' : 'false');
+            if (isAdmin) showAdminScreen();
+            else showMainScreen();
+        }
+
+        function logout() {
+            currentUser = '';
+            isAdmin = false;
+            localStorage.removeItem('currentUser');
+            localStorage.removeItem('isAdmin');
+            document.getElementById('loginScreen').style.display = 'flex';
+            document.getElementById('mainScreen').style.display = 'none';
+            document.getElementById('adminScreen').style.display = 'none';
+            document.getElementById('loginName').value = '';
+            document.getElementById('loginPassword').value = '';
+            document.getElementById('loginError').style.display = 'none';
+        }
+
+        // ========== 근로자 메인 ==========
+        function showMainScreen() {
+            document.getElementById('loginScreen').style.display = 'none';
+            document.getElementById('mainScreen').style.display = 'block';
+            document.getElementById('adminScreen').style.display = 'none';
+            const now = new Date();
+            document.getElementById('currentDate').textContent = `${now.getFullYear()}년 ${now.getMonth()+1}월 ${now.getDate()}일`;
+            document.getElementById('userBadge').textContent = currentUser + ' 님';
+            const m = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+            document.getElementById('worklogMonth').value = m;
+            document.getElementById('insuranceMonth').value = m;
+            document.getElementById('historyMonth').value = m;
+            if (document.getElementById('worklogEntries').children.length === 0) addWorklogEntry();
+            setupDragAndDrop();
+            loadHistory();
+            checkInsuranceReminder();
+        }
+
+        // ========== 관리자 ==========
+        function showAdminScreen() {
+            document.getElementById('loginScreen').style.display = 'none';
+            document.getElementById('mainScreen').style.display = 'none';
+            document.getElementById('adminScreen').style.display = 'block';
+            const now = new Date();
+            document.getElementById('adminDate').textContent = `${now.getFullYear()}년 ${now.getMonth()+1}월 ${now.getDate()}일`;
+            document.getElementById('adminBadge').textContent = currentUser + ' 님';
+            const m = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+            document.getElementById('adminOverviewMonth').value = m;
+            document.getElementById('adminSubMonth').value = m;
+            document.getElementById('adminCalMonth').value = m;
+            loadAdminOverview();
+            populateWorkerFilter();
+            loadAdminSubmissions();
+            loadWorklogTracker();
+            renderWorkerList();
+        }
+
+        // ========== 탭 ==========
+        function switchTab(tabName) {
+            document.querySelectorAll('#mainScreen .tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('#mainScreen .tab-content').forEach(c => c.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById(`tab-${tabName}`).classList.add('active');
+            if (tabName === 'history') loadHistory();
+        }
+
+        function switchTabByName(tabName) {
+            document.querySelectorAll('#mainScreen .tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('#mainScreen .tab-content').forEach(c => c.classList.remove('active'));
+            const tabs = document.querySelectorAll('#mainScreen .tab-btn');
+            const tabMap = { 'worklog': 0, 'insurance': 1, 'history': 2, 'mypage': 3 };
+            if (tabs[tabMap[tabName]]) tabs[tabMap[tabName]].classList.add('active');
+            document.getElementById(`tab-${tabName}`).classList.add('active');
+        }
+
+        function switchAdminTab(tabName) {
+            document.querySelectorAll('#adminScreen .tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('#adminScreen .tab-content').forEach(c => c.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById(`admin-tab-${tabName}`).classList.add('active');
+            if (tabName === 'overview') loadAdminOverview();
+            if (tabName === 'submissions') { populateWorkerFilter(); loadAdminSubmissions(); }
+            if (tabName === 'worklog-tracker') loadWorklogTracker();
+            if (tabName === 'workers') renderWorkerList();
+        }
+
+        // ========== 인원 관리 ==========
+        function addWorker() {
+            const nameInput = document.getElementById('newWorkerName');
+            const pwInput = document.getElementById('newWorkerPw');
+            const roleSelect = document.getElementById('newWorkerRole');
+            const name = nameInput.value.trim();
+            const pw = pwInput.value.trim();
+            const role = roleSelect.value;
+            if (!name) { showAdminAlert('error', '이름을 입력해 주세요.'); return; }
+            if (!pw) { showAdminAlert('error', '비밀번호를 입력해 주세요.'); return; }
+            if (registeredWorkers.some(w => w.name === name)) { showAdminAlert('error', `"${name}" 님은 이미 등록되어 있습니다.`); return; }
+
+            const now = new Date();
+            const dateStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+            registeredWorkers.push({ name, password: pw, role, registeredAt: dateStr });
+            localStorage.setItem('registeredWorkers', JSON.stringify(registeredWorkers));
+            nameInput.value = ''; pwInput.value = ''; roleSelect.value = 'worker';
+            renderWorkerList();
+            const roleLabel = role === 'admin' ? '관리자' : '근로자';
+            showAdminAlert('success', `"${name}" 님이 ${roleLabel}(으)로 등록되었습니다.`);
+        }
+
+        function requestDeleteWorker(name) {
+            pendingDeleteWorker = name;
+            document.getElementById('deleteModalTitle').textContent = '삭제 확인';
+            document.getElementById('deleteModalMessage').textContent = `"${name}" 님을 삭제하시겠습니까? 삭제 후에는 로그인할 수 없습니다. (기존 제출 내역은 유지됩니다.)`;
+            document.getElementById('deleteModal').classList.add('active');
+        }
+
+        function confirmDeleteWorker() {
+            if (!pendingDeleteWorker) return;
+            registeredWorkers = registeredWorkers.filter(w => w.name !== pendingDeleteWorker);
+            localStorage.setItem('registeredWorkers', JSON.stringify(registeredWorkers));
+            showAdminAlert('success', `"${pendingDeleteWorker}" 님이 삭제되었습니다.`);
+            pendingDeleteWorker = null;
+            closeDeleteModal();
+            renderWorkerList();
+        }
+
+        function closeDeleteModal() { document.getElementById('deleteModal').classList.remove('active'); pendingDeleteWorker = null; }
+
+        function changeWorkerPassword(name) {
+            const input = document.getElementById(`pw-input-${CSS.escape(name)}`);
+            if (!input) return;
+            const newPw = input.value.trim();
+            if (!newPw) { showAdminAlert('error', '새 비밀번호를 입력해 주세요.'); return; }
+            const w = registeredWorkers.find(w => w.name === name);
+            if (w) { w.password = newPw; localStorage.setItem('registeredWorkers', JSON.stringify(registeredWorkers)); }
+            showAdminAlert('success', `"${name}" 님의 비밀번호가 변경되었습니다.`);
+            input.value = '';
+        }
+
+        function changeWorkerRole(name, newRole) {
+            const w = registeredWorkers.find(w => w.name === name);
+            if (!w || w.role === newRole) return;
+            w.role = newRole;
+            localStorage.setItem('registeredWorkers', JSON.stringify(registeredWorkers));
+            renderWorkerList();
+            const roleLabel = newRole === 'admin' ? '관리자' : '근로자';
+            showAdminAlert('success', `"${name}" 님이 ${roleLabel}(으)로 변경되었습니다.`);
+        }
+
+        function renderWorkerList() {
+            const container = document.getElementById('workerList');
+            const badge = document.getElementById('workerCountBadge');
+            const workers = registeredWorkers.filter(w => w.role !== 'admin');
+            const admins = registeredWorkers.filter(w => w.role === 'admin');
+            badge.textContent = `관리자 ${admins.length}명 / 근로자 ${workers.length}명`;
+
+            if (registeredWorkers.length === 0) {
+                container.innerHTML = '<div style="text-align:center; padding:48px; color:#bbb; font-size:13px;">등록된 인원이 없습니다.</div>';
+                return;
+            }
+
+            const sorted = [...registeredWorkers].sort((a, b) => { if (a.role !== b.role) return a.role === 'admin' ? -1 : 1; return a.name.localeCompare(b.name); });
+            container.innerHTML = sorted.map(w => {
+                const isAdm = w.role === 'admin';
+                const roleBg = isAdm ? 'background:#eef7f3;color:#4a9b7f;' : 'background:#f5f5f5;color:#888;';
+                const roleText = isAdm ? '관리자' : '근로자';
+                const safeName = escapeHtml(w.name);
+                const safeNameAttr = w.name.replace(/'/g, "\\'");
+                return `<div class="worker-list-item">
+                    <div style="flex:1;">
+                        <div class="worker-list-info">
+                            <span class="worker-list-name">${safeName}</span>
+                            <span class="worker-list-role" style="${roleBg}">${roleText}</span>
+                            <span class="worker-list-date">등록일: ${w.registeredAt}</span>
+                        </div>
+                        <div class="pw-change-inline">
+                            <input type="text" id="pw-input-${safeName}" placeholder="새 비밀번호">
+                            <button class="btn-download" onclick="changeWorkerPassword('${safeNameAttr}')">변경</button>
+                            <select class="role-dropdown" onchange="changeWorkerRole('${safeNameAttr}', this.value)">
+                                <option value="worker" ${!isAdm ? 'selected' : ''}>근로자</option>
+                                <option value="admin" ${isAdm ? 'selected' : ''}>관리자</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="worker-list-actions">
+                        <button class="btn btn-danger" onclick="requestDeleteWorker('${safeNameAttr}')">삭제</button>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        function showAdminAlert(type, message) {
+            const s = document.getElementById('adminAlertSuccess'), e = document.getElementById('adminAlertError');
+            s.style.display = 'none'; e.style.display = 'none';
+            const el = type === 'success' ? s : e;
+            el.textContent = message; el.style.display = 'block';
+            setTimeout(() => el.style.display = 'none', 5000);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // ========== 업무 일지 ==========
+        function addWorklogEntry() {
+            worklogEntryCount++;
+            const id = worklogEntryCount;
+            const c = document.getElementById('worklogEntries');
+            const e = document.createElement('div');
+            e.className = 'work-log-entry'; e.id = `entry-${id}`;
+            e.innerHTML = `<div class="entry-header"><span class="entry-number">업무 #${id}</span>${id > 1 ? `<button class="remove-entry-btn" onclick="removeEntry(${id})">&times;</button>` : ''}</div>
+                <div class="form-group"><label>근무일 <span class="required">*</span></label><input type="date" name="workDate_${id}" required></div>
+                <div class="form-group"><label>업무 내용 <span class="required">*</span></label><textarea name="workContent_${id}" placeholder="수행한 업무 내용을 상세히 기록해 주세요." rows="4" required></textarea></div>
+                <div class="form-group"><label>참고 파일 첨부 <span style="font-size:11px;color:#bbb;font-weight:400;text-transform:none;letter-spacing:0;">(선택)</span></label>
+                    <div class="entry-file-area" id="efa-${id}" onclick="document.getElementById('ef-input-${id}').click()"><div class="ef-icon">&#128206;</div><div class="ef-text">클릭하여 파일 첨부 (PDF, JPG, PNG / 10MB 이하)</div><input type="file" id="ef-input-${id}" accept=".pdf,.jpg,.jpeg,.png" onchange="handleEntryFile(event, ${id})" onclick="event.stopPropagation()"></div></div>`;
+            c.appendChild(e);
+        }
+
+        function handleEntryFile(event, entryId) {
+            const file = event.target.files[0]; if (!file) return;
+            if (!['application/pdf','image/jpeg','image/png'].includes(file.type)) { showAlert('error', 'PDF, JPG, PNG 형식만 가능합니다.'); event.target.value=''; return; }
+            if (file.size > 10*1024*1024) { showAlert('error', '10MB 이하만 가능합니다.'); event.target.value=''; return; }
+            const reader = new FileReader();
+            reader.onload = function(e) { entryFiles[entryId] = { name: file.name, size: file.size, type: file.type, data: e.target.result }; renderEntryFile(entryId); };
+            reader.readAsDataURL(file);
+        }
+
+        function renderEntryFile(entryId) {
+            const area = document.getElementById(`efa-${entryId}`); if (!area) return;
+            const f = entryFiles[entryId];
+            if (!f) { area.classList.remove('has-file'); area.innerHTML = `<div class="ef-icon">&#128206;</div><div class="ef-text">클릭하여 파일 첨부 (PDF, JPG, PNG / 10MB 이하)</div><input type="file" id="ef-input-${entryId}" accept=".pdf,.jpg,.jpeg,.png" onchange="handleEntryFile(event, ${entryId})" onclick="event.stopPropagation()">`; area.onclick = function(){ document.getElementById(`ef-input-${entryId}`).click(); }; return; }
+            area.classList.add('has-file');
+            const sz = f.size < 1024*1024 ? `${(f.size/1024).toFixed(1)}KB` : `${(f.size/(1024*1024)).toFixed(1)}MB`;
+            area.innerHTML = `<div class="entry-file-info"><span class="ef-name">&#128206; ${escapeHtml(f.name)} (${sz})</span><button class="ef-remove" onclick="event.stopPropagation(); removeEntryFile(${entryId})">&times;</button></div>`;
+            area.onclick = null;
+        }
+
+        function removeEntryFile(entryId) { delete entryFiles[entryId]; renderEntryFile(entryId); }
+        function removeEntry(id) { const e = document.getElementById(`entry-${id}`); if (e) e.remove(); delete entryFiles[id]; }
+
+        function resetWorklogForm() {
+            document.getElementById('worklogForm').reset();
+            document.getElementById('worklogEntries').innerHTML = '';
+            worklogEntryCount = 0; entryFiles = {};
+            editingSubIdx = null;
+            document.getElementById('worklogSubmitBtn').textContent = '업무 일지 제출';
+            addWorklogEntry();
+            const now = new Date();
+            document.getElementById('worklogMonth').value = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+        }
+
+        function submitWorklog() {
+            const month = document.getElementById('worklogMonth').value;
+            if (!month) { showAlert('error', '대상 월을 선택해 주세요.'); return; }
+            const entries = document.querySelectorAll('.work-log-entry');
+            for (const entry of entries) { if (!entry.querySelector('input[type="date"]').value || !entry.querySelector('textarea').value.trim()) { showAlert('error', '모든 업무 항목의 근무일과 업무 내용을 입력해 주세요.'); return; } }
+            pendingSubmitType = editingSubIdx !== null ? 'worklog-edit' : 'worklog';
+            const label = editingSubIdx !== null ? '수정' : '제출';
+            document.getElementById('modalTitle').textContent = `업무 일지 ${label} 확인`;
+            document.getElementById('modalMessage').textContent = `${formatMonth(month)} 업무 일지(${entries.length}건)를 ${label}하시겠습니까?`;
+            document.getElementById('modalConfirmBtn').textContent = label;
+            document.getElementById('confirmModal').classList.add('active');
+        }
+
+        // ========== 파일 업로드 (보험용) ==========
+        function setupDragAndDrop() {
+            const a = document.getElementById('fileUploadArea'); if (!a) return;
+            a.addEventListener('dragover', e => { e.preventDefault(); a.classList.add('drag-over'); });
+            a.addEventListener('dragleave', () => a.classList.remove('drag-over'));
+            a.addEventListener('drop', e => { e.preventDefault(); a.classList.remove('drag-over'); if (e.dataTransfer.files.length > 0) processFile(e.dataTransfer.files[0]); });
+        }
+        function handleFileSelect(e) { if (e.target.files[0]) processFile(e.target.files[0]); }
+        function processFile(file) {
+            if (!['application/pdf','image/jpeg','image/png'].includes(file.type)) { showAlert('error', 'PDF, JPG, PNG 형식만 가능합니다.'); return; }
+            if (file.size > 10*1024*1024) { showAlert('error', '10MB 이하만 가능합니다.'); return; }
+            uploadedFile = file; displayUploadedFile(file);
+        }
+        function displayUploadedFile(file) {
+            const s = file.size < 1024*1024 ? `${(file.size/1024).toFixed(1)}KB` : `${(file.size/(1024*1024)).toFixed(1)}MB`;
+            let i = '&#128196;'; if (file.type==='application/pdf') i='&#128213;'; else if (file.type.startsWith('image/')) i='&#128444;';
+            document.getElementById('uploadedFiles').innerHTML = `<div class="uploaded-file-item"><div class="uploaded-file-info"><span class="file-icon">${i}</span><div><div class="file-name">${file.name}</div><div class="file-size">${s}</div></div></div><button class="remove-file-btn" onclick="removeFile()">&times;</button></div>`;
+        }
+        function removeFile() { uploadedFile=null; document.getElementById('uploadedFiles').innerHTML=''; document.getElementById('fileInput').value=''; }
+
+        function resetInsuranceForm() { document.getElementById('insuranceForm').reset(); removeFile(); const now=new Date(); document.getElementById('insuranceMonth').value=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`; }
+
+        function submitInsurance() {
+            const month = document.getElementById('insuranceMonth').value;
+            if (!month) { showAlert('error', '대상 월을 선택해 주세요.'); return; }
+            if (!document.getElementById('issueDate').value) { showAlert('error', '발급일자를 입력해 주세요.'); return; }
+            if (!uploadedFile) { showAlert('error', '파일을 첨부해 주세요.'); return; }
+            pendingSubmitType = 'insurance';
+            document.getElementById('modalTitle').textContent = '자격득실확인서 제출 확인';
+            document.getElementById('modalMessage').textContent = `${formatMonth(month)} 건강보험 자격득실확인서를 제출하시겠습니까?\n파일: ${uploadedFile.name}`;
+            document.getElementById('modalConfirmBtn').textContent = '제출';
+            document.getElementById('confirmModal').classList.add('active');
+        }
+
+        // ========== 제출 처리 ==========
+        function confirmSubmit() {
+            closeModal();
+            const now = new Date();
+            const t = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+
+            if (pendingSubmitType === 'worklog' || pendingSubmitType === 'worklog-edit') {
+                const isEdit = pendingSubmitType === 'worklog-edit';
+                const month = document.getElementById('worklogMonth').value;
+                const entries = document.querySelectorAll('.work-log-entry');
+                const dates = []; const entryDetails = [];
+
+                // 수정 시 기존 worklogData 삭제
+                if (isEdit && editingSubIdx !== null) {
+                    const oldSub = submissions[editingSubIdx];
+                    if (oldSub && oldSub.workDates) {
+                        worklogData = worklogData.filter(w => !(w.name === oldSub.name && w.month === oldSub.month && oldSub.workDates.includes(w.date)));
+                    }
+                }
+
+                entries.forEach(entry => {
+                    const idMatch = entry.id.match(/entry-(\d+)/);
+                    const entryId = idMatch ? parseInt(idMatch[1]) : 0;
+                    const d = entry.querySelector('input[type="date"]').value;
+                    const c = entry.querySelector('textarea').value.trim();
+                    if (d && c) {
+                        const fileInfo = entryFiles[entryId] ? { name: entryFiles[entryId].name, size: entryFiles[entryId].size, type: entryFiles[entryId].type, data: entryFiles[entryId].data } : null;
+                        worklogData.push({ name: currentUser, date: d, content: c, submittedAt: t, month: month, file: fileInfo });
+                        dates.push(d);
+                        entryDetails.push({ date: d, content: c, file: fileInfo ? fileInfo.name : null });
+                    }
+                });
+                localStorage.setItem('worklogData', JSON.stringify(worklogData));
+
+                if (isEdit && editingSubIdx !== null) {
+                    submissions[editingSubIdx].date = t;
+                    submissions[editingSubIdx].workDates = dates;
+                    submissions[editingSubIdx].entryDetails = entryDetails;
+                    submissions[editingSubIdx].month = month;
+                } else {
+                    submissions.push({ type: '업무 일지', date: t, month: month, name: currentUser, status: 'submitted', workDates: dates, entryDetails: entryDetails });
+                }
+                localStorage.setItem('submissions', JSON.stringify(submissions));
+                showAlert('success', isEdit ? '업무 일지가 수정되었습니다.' : '업무 일지가 성공적으로 제출되었습니다.');
+                editingSubIdx = null;
+                resetWorklogForm();
+            } else if (pendingSubmitType === 'insurance') {
+                submissions.push({ type: '자격득실확인서', date: t, month: document.getElementById('insuranceMonth').value, name: currentUser, fileName: uploadedFile ? uploadedFile.name : '', status: 'submitted' });
+                localStorage.setItem('submissions', JSON.stringify(submissions));
+                showAlert('success', '건강보험 자격득실확인서가 성공적으로 제출되었습니다.');
+                resetInsuranceForm();
+            }
+            pendingSubmitType = null;
+            loadHistory();
+        }
+
+        function closeModal() { document.getElementById('confirmModal').classList.remove('active'); }
+
+        // ========== 근로자 제출 내역 + 수정 ==========
+        function loadHistory() {
+            const tbody = document.getElementById('historyBody');
+            const noEl = document.getElementById('noHistory');
+            const m = document.getElementById('historyMonth').value;
+            tbody.innerHTML = '';
+            const f = submissions.filter(s => s.name === currentUser && (!m || s.month === m));
+            if (f.length === 0) { noEl.style.display = 'block'; return; }
+            noEl.style.display = 'none';
+            f.sort((a,b) => b.date.localeCompare(a.date));
+            f.forEach(s => {
+                const sc = s.status==='submitted'?'status-submitted':s.status==='pending'?'status-pending':'status-rejected';
+                const st = s.status==='submitted'?'제출완료':s.status==='pending'?'검토중':'반려';
+                const origIdx = submissions.indexOf(s);
+                const r = document.createElement('tr');
+                r.className = 'clickable-row';
+                r.onclick = function() { showSubmissionDetail(origIdx); };
+                const editBtn = s.type === '업무 일지' ? `<button class="btn-edit" onclick="event.stopPropagation(); startEditWorklog(${origIdx})">수정</button>` : '';
+                r.innerHTML = `<td>${s.date}</td><td>${s.type}</td><td>${formatMonth(s.month)}</td><td><span class="status-badge ${sc}">${st}</span></td><td>${editBtn}</td>`;
+                tbody.appendChild(r);
+            });
+        }
+
+        function startEditWorklog(subIdx) {
+            const s = submissions[subIdx];
+            if (!s || s.type !== '업무 일지' || s.name !== currentUser) return;
+
+            // 업무일지 탭으로 전환
+            document.querySelectorAll('#mainScreen .tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('#mainScreen .tab-content').forEach(c => c.classList.remove('active'));
+            document.querySelectorAll('#mainScreen .tab-btn')[0].classList.add('active');
+            document.getElementById('tab-worklog').classList.add('active');
+
+            // 폼 초기화 후 데이터 채우기
+            document.getElementById('worklogEntries').innerHTML = '';
+            worklogEntryCount = 0; entryFiles = {};
+            editingSubIdx = subIdx;
+            document.getElementById('worklogMonth').value = s.month;
+            document.getElementById('worklogSubmitBtn').textContent = '업무 일지 수정';
+
+            const wlEntries = worklogData.filter(w => w.name === s.name && w.month === s.month && s.workDates && s.workDates.includes(w.date));
+            if (wlEntries.length > 0) {
+                wlEntries.sort((a,b) => a.date.localeCompare(b.date));
+                wlEntries.forEach(w => {
+                    addWorklogEntry();
+                    const id = worklogEntryCount;
+                    const entry = document.getElementById(`entry-${id}`);
+                    entry.querySelector('input[type="date"]').value = w.date;
+                    entry.querySelector('textarea').value = w.content;
+                    if (w.file) { entryFiles[id] = { ...w.file }; renderEntryFile(id); }
+                });
+            } else if (s.entryDetails && s.entryDetails.length > 0) {
+                s.entryDetails.forEach(ed => {
+                    addWorklogEntry();
+                    const id = worklogEntryCount;
+                    const entry = document.getElementById(`entry-${id}`);
+                    entry.querySelector('input[type="date"]').value = ed.date;
+                    entry.querySelector('textarea').value = ed.content;
+                });
+            } else { addWorklogEntry(); }
+
+            showAlert('success', '업무 일지를 수정 중입니다. 내용을 변경 후 "업무 일지 수정" 버튼을 눌러주세요.');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // ========== 관리자: 전체 현황 ==========
+        function loadAdminOverview() {
+            const month = document.getElementById('adminOverviewMonth').value;
+            const filtered = submissions.filter(s => !month || s.month === month);
+            const workerOnly = registeredWorkers.filter(w => w.role !== 'admin');
+            const allWorkerNames = workerOnly.map(w => w.name);
+            const totalSubs = filtered.length;
+            const wc = filtered.filter(s => s.type==='업무 일지').length;
+            const ic = filtered.filter(s => s.type==='자격득실확인서').length;
+            const wlW = [...new Set(filtered.filter(s=>s.type==='업무 일지').map(s=>s.name))].length;
+            const insW = [...new Set(filtered.filter(s=>s.type==='자격득실확인서').map(s=>s.name))].length;
+
+            document.getElementById('statCards').innerHTML = `
+                <div class="stat-card"><div class="stat-label">등록 근로자</div><div class="stat-value">${allWorkerNames.length}</div><div class="stat-sub">총 등록 인원</div></div>
+                <div class="stat-card"><div class="stat-label">총 제출 건수</div><div class="stat-value">${totalSubs}</div><div class="stat-sub">업무일지 ${wc} + 확인서 ${ic}</div></div>
+                <div class="stat-card"><div class="stat-label">업무 일지</div><div class="stat-value">${wc}</div><div class="stat-sub">${allWorkerNames.length}명 중 ${wlW}명 제출</div></div>
+                <div class="stat-card"><div class="stat-label">자격득실확인서</div><div class="stat-value">${ic}</div><div class="stat-sub">${allWorkerNames.length}명 중 ${insW}명 제출</div></div>`;
+
+            const tbody = document.getElementById('overviewBody');
+            const noEl = document.getElementById('noOverview');
+            tbody.innerHTML = '';
+            if (allWorkerNames.length === 0) { noEl.style.display = 'block'; return; }
+            noEl.style.display = 'none';
+            allWorkerNames.sort().forEach(w => {
+                const ws = filtered.filter(s => s.name === w);
+                const hw = ws.some(s => s.type==='업무 일지');
+                const hi = ws.some(s => s.type==='자격득실확인서');
+                const r = document.createElement('tr');
+                r.innerHTML = `<td style="font-weight:600;">${escapeHtml(w)}</td><td><span class="status-badge ${hw?'status-submitted':'status-rejected'}">${hw?'제출완료':'미제출'}</span></td><td><span class="status-badge ${hi?'status-submitted':'status-rejected'}">${hi?'제출완료':'미제출'}</span></td>`;
+                tbody.appendChild(r);
+            });
+        }
+
+        // ========== 관리자: 제출 내역 ==========
+        function populateWorkerFilter() {
+            const select = document.getElementById('adminSubWorker');
+            const current = select.value;
+            select.innerHTML = '<option value="">전체</option>';
+            registeredWorkers.filter(w=>w.role!=='admin').map(w=>w.name).sort().forEach(w => {
+                select.innerHTML += `<option value="${w}" ${w===current?'selected':''}>${w}</option>`;
+            });
+        }
+
+        function loadAdminSubmissions() {
+            const month = document.getElementById('adminSubMonth').value;
+            const worker = document.getElementById('adminSubWorker').value;
+            const tbody = document.getElementById('adminSubBody');
+            const noEl = document.getElementById('noAdminSub');
+            tbody.innerHTML = '';
+            const f = submissions.filter(s => (!month||s.month===month) && (!worker||s.name===worker));
+            if (f.length===0) { noEl.style.display='block'; return; }
+            noEl.style.display='none';
+            f.sort((a,b)=>b.date.localeCompare(a.date));
+            f.forEach(s => {
+                const sc=s.status==='submitted'?'status-submitted':s.status==='pending'?'status-pending':'status-rejected';
+                const st=s.status==='submitted'?'제출완료':s.status==='pending'?'검토중':'반려';
+                const origIdx = submissions.indexOf(s);
+                const r=document.createElement('tr');
+                r.className = 'clickable-row';
+                r.onclick = function() { showSubmissionDetail(origIdx); };
+                r.innerHTML=`<td>${s.date}</td><td style="font-weight:600;">${escapeHtml(s.name)}</td><td>${s.type}</td><td>${formatMonth(s.month)}</td><td><span class="status-badge ${sc}">${st}</span></td>`;
+                tbody.appendChild(r);
+            });
+        }
+
+        // ========== 제출 상세 + 다운로드 ==========
+        function showSubmissionDetail(subIdx) {
+            const s = submissions[subIdx]; if (!s) return;
+            const container = document.getElementById('detailModalContent');
+            document.getElementById('detailModalTitle').textContent = `${escapeHtml(s.name)} - ${s.type} 상세`;
+
+            let html = '';
+            html += `<div class="detail-item"><div class="detail-label">제출자</div><div class="detail-value">${escapeHtml(s.name)}</div></div>`;
+            html += `<div class="detail-item"><div class="detail-label">서류 종류</div><div class="detail-value">${s.type}</div></div>`;
+            html += `<div class="detail-item"><div class="detail-label">대상 월</div><div class="detail-value">${formatMonth(s.month)}</div></div>`;
+            html += `<div class="detail-item"><div class="detail-label">제출일시</div><div class="detail-value">${s.date}</div></div>`;
+
+            if (s.type === '업무 일지') {
+                const wlEntries = worklogData.filter(w => w.name === s.name && w.month === s.month && s.workDates && s.workDates.includes(w.date));
+                const entries = wlEntries.length > 0 ? wlEntries : null;
+
+                if (entries && entries.length > 0) {
+                    html += `<div class="detail-item"><div class="detail-label">업무 내역 (${entries.length}건)</div><div class="detail-value">`;
+                    entries.sort((a,b)=>a.date.localeCompare(b.date));
+                    entries.forEach((w, i) => {
+                        html += `<div class="detail-entry-card"><div class="de-date">&#128197; ${w.date}</div><div class="de-content">${escapeHtml(w.content)}</div>`;
+                        if (w.file && w.file.data) {
+                            html += `<div class="de-file"><span class="detail-file-badge">&#128206; ${escapeHtml(w.file.name)}</span> <button class="btn-download" onclick="downloadFileData('${escapeAttr(w.file.name)}', '${escapeAttr(w.file.type)}', ${subIdx}, ${i})">다운로드</button></div>`;
+                        } else if (w.file && w.file.name) {
+                            html += `<div class="de-file"><span class="detail-file-badge">&#128206; ${escapeHtml(w.file.name)}</span></div>`;
+                        }
+                        html += `</div>`;
+                    });
+                    html += `</div></div>`;
+                } else if (s.entryDetails && s.entryDetails.length > 0) {
+                    html += `<div class="detail-item"><div class="detail-label">업무 내역 (${s.entryDetails.length}건)</div><div class="detail-value">`;
+                    s.entryDetails.forEach(ed => {
+                        html += `<div class="detail-entry-card"><div class="de-date">&#128197; ${ed.date}</div><div class="de-content">${escapeHtml(ed.content)}</div>`;
+                        if (ed.file) html += `<div class="de-file"><span class="detail-file-badge">&#128206; ${escapeHtml(ed.file)}</span></div>`;
+                        html += `</div>`;
+                    });
+                    html += `</div></div>`;
+                }
+            } else if (s.type === '자격득실확인서') {
+                if (s.fileName) html += `<div class="detail-item"><div class="detail-label">첨부 파일</div><div class="detail-value"><span class="detail-file-badge">&#128196; ${escapeHtml(s.fileName)}</span></div></div>`;
+            }
+
+            container.innerHTML = html;
+            document.getElementById('detailModal').classList.add('active');
+        }
+
+        function downloadFileData(fileName, fileType, subIdx, entryIdx) {
+            const s = submissions[subIdx]; if (!s) return;
+            const wlEntries = worklogData.filter(w => w.name === s.name && w.month === s.month && s.workDates && s.workDates.includes(w.date)).sort((a,b)=>a.date.localeCompare(b.date));
+            if (wlEntries[entryIdx] && wlEntries[entryIdx].file && wlEntries[entryIdx].file.data) {
+                const a = document.createElement('a');
+                a.href = wlEntries[entryIdx].file.data;
+                a.download = fileName;
+                document.body.appendChild(a); a.click(); document.body.removeChild(a);
+            }
+        }
+
+        function closeDetailModal() { document.getElementById('detailModal').classList.remove('active'); }
+        function closeEditModal() { document.getElementById('editModal').classList.remove('active'); }
+
+        // ========== 관리자: 업무일지 달력 ==========
+        function loadWorklogTracker() {
+            const month = document.getElementById('adminCalMonth').value; if (!month) return;
+            const container = document.getElementById('workerCalendars');
+            container.innerHTML = '';
+            const workerOnly = registeredWorkers.filter(w => w.role !== 'admin');
+            const allWorkerNames = workerOnly.map(w => w.name).sort();
+            if (allWorkerNames.length === 0) { container.innerHTML = '<div style="text-align:center; padding:48px; color:#bbb; font-size:13px;">등록된 근로자가 없습니다.</div>'; return; }
+
+            allWorkerNames.forEach(workerName => {
+                const card = document.createElement('div'); card.className = 'worker-card';
+                const wl = worklogData.filter(w => w.name === workerName && w.month === month);
+                const wd = new Set(wl.map(w => w.date));
+                const [year, mon] = month.split('-').map(Number);
+                const dim = new Date(year, mon, 0).getDate();
+                const today = new Date();
+                const isCur = today.getFullYear()===year && (today.getMonth()+1)===mon;
+                const lastDay = isCur ? today.getDate() : dim;
+                let wkCnt = 0;
+                for (let d=1; d<=lastDay; d++) { const dow = new Date(year,mon-1,d).getDay(); if(dow!==0&&dow!==6) wkCnt++; }
+                const rate = wkCnt>0 ? Math.round((wd.size/wkCnt)*100) : 0;
+                const safeId = workerName.replace(/[^a-zA-Z0-9가-힣]/g, '');
+
+                card.innerHTML = `<div class="worker-card-header" onclick="toggleWorkerCard(this)"><span class="worker-name">${escapeHtml(workerName)}</span>
+                    <div class="worker-summary"><span style="background:#eef7f3;color:#4a9b7f;">작성 ${wd.size}일</span><span style="background:${rate>=80?'#eef7f3':rate>=50?'#fff8ee':'#fff5f5'};color:${rate>=80?'#4a9b7f':rate>=50?'#d4940a':'#e85d5d'};">작성률 ${rate}%</span></div></div>
+                    <div class="worker-card-body"><div class="calendar"><div class="calendar-title">${year}년 ${mon}월 업무일지 작성 현황</div>
+                    <div class="calendar-grid" id="cal-${safeId}"></div>
+                    <div class="calendar-legend"><span><span class="legend-dot written"></span> 작성</span><span><span class="legend-dot not-written"></span> 미작성</span><span><span class="legend-dot weekend"></span> 주말</span><span><span class="legend-dot future"></span> 미래</span></div></div>
+                    <div class="detail-section"><h4>작성 상세 내역</h4>
+                    <table class="history-table"><thead><tr><th>날짜</th><th>업무 내용</th><th>첨부</th><th>제출 시간</th></tr></thead><tbody id="detail-${safeId}"></tbody></table></div></div>`;
+                container.appendChild(card);
+                renderCalendar(safeId, year, mon, wd, isCur, today);
+                const db = document.getElementById(`detail-${safeId}`);
+                if (wl.length===0) { db.innerHTML='<tr><td colspan="4" style="text-align:center;color:#bbb;padding:24px;font-size:13px;">작성된 업무 일지가 없습니다.</td></tr>'; }
+                else {
+                    wl.sort((a,b)=>a.date.localeCompare(b.date));
+                    wl.forEach((l, li) => {
+                        const r=document.createElement('tr');
+                        let fileCell = '<span style="color:#ccc;font-size:12px;">-</span>';
+                        if (l.file && l.file.data) {
+                            fileCell = `<span class="detail-file-badge" style="font-size:11px;padding:4px 10px;">&#128206; ${escapeHtml(l.file.name)}</span> <button class="btn-download" onclick="downloadWorklogFile('${escapeAttr(workerName)}','${month}','${l.date}')">다운로드</button>`;
+                        } else if (l.file && l.file.name) {
+                            fileCell = `<span class="detail-file-badge" style="font-size:11px;padding:4px 10px;">&#128206; ${escapeHtml(l.file.name)}</span>`;
+                        }
+                        r.innerHTML=`<td style="white-space:nowrap;">${l.date}</td><td>${escapeHtml(l.content)}</td><td>${fileCell}</td><td style="white-space:nowrap;color:#aaa;font-size:11px;">${l.submittedAt}</td>`;
+                        db.appendChild(r);
+                    });
+                }
+            });
+        }
+
+        function downloadWorklogFile(workerName, month, date) {
+            const entry = worklogData.find(w => w.name === workerName && w.month === month && w.date === date && w.file && w.file.data);
+            if (entry) {
+                const a = document.createElement('a');
+                a.href = entry.file.data;
+                a.download = entry.file.name;
+                document.body.appendChild(a); a.click(); document.body.removeChild(a);
+            }
+        }
+
+        function renderCalendar(safeId, year, mon, writtenDates, isCur, today) {
+            const g = document.getElementById(`cal-${safeId}`); if (!g) return;
+            ['일','월','화','수','목','금','토'].forEach(d => g.innerHTML += `<div class="cal-header">${d}</div>`);
+            const fd = new Date(year,mon-1,1).getDay();
+            const dim = new Date(year,mon,0).getDate();
+            for (let i=0;i<fd;i++) g.innerHTML += '<div class="cal-day empty"></div>';
+            for (let d=1;d<=dim;d++) {
+                const ds = `${year}-${String(mon).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+                const dow = new Date(year,mon-1,d).getDay();
+                const we = dow===0||dow===6;
+                const fu = isCur && d>today.getDate();
+                const pm = !isCur && new Date(year,mon-1,d)>today;
+                const wr = writtenDates.has(ds);
+                let c = 'cal-day';
+                if (fu||pm) c+=' future'; else if (we) c+=' weekend'; else if (wr) c+=' written'; else c+=' not-written';
+                g.innerHTML += `<div class="${c}">${d}</div>`;
+            }
+        }
+
+        function toggleWorkerCard(h) { h.nextElementSibling.classList.toggle('open'); }
+
+        // ========== 근로자 비밀번호 변경 ==========
+        function changeMyPassword() {
+            const curPw = document.getElementById('myCurrentPw').value;
+            const newPw = document.getElementById('myNewPw').value.trim();
+            const confirmPw = document.getElementById('myNewPwConfirm').value.trim();
+
+            if (!curPw) { showAlert('error', '현재 비밀번호를 입력해 주세요.'); return; }
+            if (!newPw) { showAlert('error', '새 비밀번호를 입력해 주세요.'); return; }
+            if (newPw !== confirmPw) { showAlert('error', '새 비밀번호가 일치하지 않습니다.'); return; }
+
+            const user = registeredWorkers.find(w => w.name === currentUser);
+            if (!user) { showAlert('error', '사용자 정보를 찾을 수 없습니다.'); return; }
+            if (user.password !== curPw) { showAlert('error', '현재 비밀번호가 틀렸습니다.'); return; }
+
+            user.password = newPw;
+            localStorage.setItem('registeredWorkers', JSON.stringify(registeredWorkers));
+            document.getElementById('myCurrentPw').value = '';
+            document.getElementById('myNewPw').value = '';
+            document.getElementById('myNewPwConfirm').value = '';
+            showAlert('success', '비밀번호가 성공적으로 변경되었습니다.');
+        }
+
+        // ========== 자격득실확인서 미제출 안내 ==========
+        function checkInsuranceReminder() {
+            const now = new Date();
+            const curMonth = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+            const hasInsurance = submissions.some(s => s.name === currentUser && s.type === '자격득실확인서' && s.month === curMonth);
+            if (!hasInsurance) {
+                document.getElementById('insuranceReminderModal').classList.add('active');
+            }
+        }
+
+        function closeInsuranceReminder() {
+            document.getElementById('insuranceReminderModal').classList.remove('active');
+        }
+
+        function goToInsuranceTab() {
+            closeInsuranceReminder();
+            document.querySelectorAll('#mainScreen .tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('#mainScreen .tab-content').forEach(c => c.classList.remove('active'));
+            document.querySelectorAll('#mainScreen .tab-btn')[1].classList.add('active');
+            document.getElementById('tab-insurance').classList.add('active');
+        }
+
+        // ========== 유틸리티 ==========
+        function formatMonth(s) { if(!s)return''; const[y,m]=s.split('-'); return `${y}년 ${parseInt(m)}월`; }
+        function escapeHtml(text) { if (!text) return ''; const d = document.createElement('div'); d.textContent = text; return d.innerHTML; }
+        function escapeAttr(text) { return (text||'').replace(/'/g, "\\'").replace(/"/g, '&quot;'); }
+
+        function showAlert(type, msg) {
+            const se=document.getElementById('alertSuccess'), ee=document.getElementById('alertError');
+            se.style.display='none'; ee.style.display='none';
+            const el=type==='success'?se:ee; el.textContent=msg; el.style.display='block';
+            setTimeout(()=>el.style.display='none', 5000);
+            window.scrollTo({top:0,behavior:'smooth'});
+        }
+
+        document.getElementById('confirmModal').addEventListener('click', function(e) { if(e.target===this) closeModal(); });
+        document.getElementById('deleteModal').addEventListener('click', function(e) { if(e.target===this) closeDeleteModal(); });
+        document.getElementById('detailModal').addEventListener('click', function(e) { if(e.target===this) closeDetailModal(); });
+        document.getElementById('editModal').addEventListener('click', function(e) { if(e.target===this) closeEditModal(); });
+        document.getElementById('insuranceReminderModal').addEventListener('click', function(e) { if(e.target===this) closeInsuranceReminder(); });
+    </script>
+</body>
+</html>
