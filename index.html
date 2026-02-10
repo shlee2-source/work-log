@@ -515,6 +515,7 @@
         let entryFiles = {};
         let editingSubIdx = null; // 수정 중인 submission index
         let editEntryFiles = {}; // 수정 모달용 파일
+        let uploadedFileData = null; // 보험용 파일 Base64 데이터
 
         // 기본 관리자가 registeredWorkers에 없으면 추가 (마이그레이션)
         (function initDefaultAdmin() {
@@ -837,16 +838,22 @@
         function processFile(file) {
             if (!['application/pdf','image/jpeg','image/png'].includes(file.type)) { showAlert('error', 'PDF, JPG, PNG 형식만 가능합니다.'); return; }
             if (file.size > 10*1024*1024) { showAlert('error', '10MB 이하만 가능합니다.'); return; }
-            uploadedFile = file; displayUploadedFile(file);
+            uploadedFile = file;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                uploadedFileData = { name: file.name, size: file.size, type: file.type, data: e.target.result };
+            };
+            reader.readAsDataURL(file);
+            displayUploadedFile(file);
         }
         function displayUploadedFile(file) {
             const s = file.size < 1024*1024 ? `${(file.size/1024).toFixed(1)}KB` : `${(file.size/(1024*1024)).toFixed(1)}MB`;
             let i = '&#128196;'; if (file.type==='application/pdf') i='&#128213;'; else if (file.type.startsWith('image/')) i='&#128444;';
             document.getElementById('uploadedFiles').innerHTML = `<div class="uploaded-file-item"><div class="uploaded-file-info"><span class="file-icon">${i}</span><div><div class="file-name">${file.name}</div><div class="file-size">${s}</div></div></div><button class="remove-file-btn" onclick="removeFile()">&times;</button></div>`;
         }
-        function removeFile() { uploadedFile=null; document.getElementById('uploadedFiles').innerHTML=''; document.getElementById('fileInput').value=''; }
+        function removeFile() { uploadedFile=null; uploadedFileData=null; document.getElementById('uploadedFiles').innerHTML=''; document.getElementById('fileInput').value=''; }
 
-        function resetInsuranceForm() { document.getElementById('insuranceForm').reset(); removeFile(); const now=new Date(); document.getElementById('insuranceMonth').value=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`; }
+        function resetInsuranceForm() { document.getElementById('insuranceForm').reset(); removeFile(); uploadedFileData=null; const now=new Date(); document.getElementById('insuranceMonth').value=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`; }
 
         function submitInsurance() {
             const month = document.getElementById('insuranceMonth').value;
@@ -907,7 +914,8 @@
                 editingSubIdx = null;
                 resetWorklogForm();
             } else if (pendingSubmitType === 'insurance') {
-                submissions.push({ type: '자격득실확인서', date: t, month: document.getElementById('insuranceMonth').value, name: currentUser, fileName: uploadedFile ? uploadedFile.name : '', status: 'submitted' });
+                const insuranceFileInfo = uploadedFileData ? { name: uploadedFileData.name, size: uploadedFileData.size, type: uploadedFileData.type, data: uploadedFileData.data } : null;
+                submissions.push({ type: '자격득실확인서', date: t, month: document.getElementById('insuranceMonth').value, name: currentUser, fileName: uploadedFile ? uploadedFile.name : '', fileData: insuranceFileInfo, status: 'submitted' });
                 localStorage.setItem('submissions', JSON.stringify(submissions));
                 showAlert('success', '건강보험 자격득실확인서가 성공적으로 제출되었습니다.');
                 resetInsuranceForm();
@@ -1087,7 +1095,11 @@
                     html += `</div></div>`;
                 }
             } else if (s.type === '자격득실확인서') {
-                if (s.fileName) html += `<div class="detail-item"><div class="detail-label">첨부 파일</div><div class="detail-value"><span class="detail-file-badge">&#128196; ${escapeHtml(s.fileName)}</span></div></div>`;
+                if (s.fileData && s.fileData.data) {
+                    html += `<div class="detail-item"><div class="detail-label">첨부 파일</div><div class="detail-value"><span class="detail-file-badge">&#128196; ${escapeHtml(s.fileData.name)}</span> <button class="btn-download" onclick="downloadInsuranceFile(${subIdx})">다운로드</button></div></div>`;
+                } else if (s.fileName) {
+                    html += `<div class="detail-item"><div class="detail-label">첨부 파일</div><div class="detail-value"><span class="detail-file-badge">&#128196; ${escapeHtml(s.fileName)}</span> <span style="font-size:11px;color:#ccc;">(파일 데이터 없음)</span></div></div>`;
+                }
             }
 
             container.innerHTML = html;
@@ -1101,6 +1113,16 @@
                 const a = document.createElement('a');
                 a.href = wlEntries[entryIdx].file.data;
                 a.download = fileName;
+                document.body.appendChild(a); a.click(); document.body.removeChild(a);
+            }
+        }
+
+        function downloadInsuranceFile(subIdx) {
+            const s = submissions[subIdx];
+            if (s && s.fileData && s.fileData.data) {
+                const a = document.createElement('a');
+                a.href = s.fileData.data;
+                a.download = s.fileData.name;
                 document.body.appendChild(a); a.click(); document.body.removeChild(a);
             }
         }
@@ -1255,3 +1277,4 @@
     </script>
 </body>
 </html>
+
