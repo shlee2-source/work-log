@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>증명서 발급 시스템</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&family=Noto+Serif+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Noto Sans KR', sans-serif; background: #f5f5f5; color: #2d2d2d; min-height: 100vh; }
+
+        /* ========== 헤더 ========== */
+        .header { background: white; padding: 20px 48px; border-bottom: 2px solid #4a9b7f; display: flex; justify-content: space-between; align-items: center; }
+        .header h1 { font-size: 18px; font-weight: 600; letter-spacing: -0.03em; }
+        .header .sub-info { font-size: 12px; color: #aaa; font-weight: 300; margin-top: 4px; }
+        .header-right { display: flex; align-items: center; gap: 12px; }
+        .back-btn { background: transparent; border: 1px solid #ddd; color: #888; padding: 7px 16px; border-radius: 8px; font-size: 12px; cursor: pointer; font-family: inherit; font-weight: 500; text-decoration: none; transition: all 0.2s; }
+        .back-btn:hover { border-color: #bbb; color: #555; }
+
+        /* ========== 메인 컨테이너 ========== */
+        .container { max-width: 1200px; margin: 0 auto; padding: 32px 24px; }
+        .panel-grid { display: grid; grid-template-columns: 380px 1fr; gap: 24px; align-items: start; }
+
+        /* ========== 설정 패널 ========== */
+        .settings-panel { background: white; border-radius: 16px; padding: 32px; border: 1px solid #eee; position: sticky; top: 24px; }
+        .panel-title { font-size: 16px; font-weight: 600; margin-bottom: 4px; letter-spacing: -0.03em; }
+        .panel-desc { font-size: 13px; color: #aaa; margin-bottom: 24px; font-weight: 300; }
+
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; font-size: 12px; font-weight: 500; color: #888; margin-bottom: 8px; letter-spacing: 0.03em; }
+        .form-group select, .form-group input[type="text"], .form-group input[type="date"] {
+            width: 100%; padding: 12px 16px; border: 1px solid #e5e5e5; border-radius: 10px; font-size: 14px;
+            color: #2d2d2d; font-family: inherit; background: #fafafa; transition: all 0.2s;
+        }
+        .form-group select:focus, .form-group input:focus { outline: none; border-color: #4a9b7f; background: white; box-shadow: 0 0 0 3px rgba(74,155,127,0.08); }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+        .btn { padding: 12px 24px; border: none; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; transition: all 0.25s; width: 100%; }
+        .btn-primary { background: #4a9b7f; color: white; }
+        .btn-primary:hover { background: #3d8269; box-shadow: 0 4px 12px rgba(74,155,127,0.2); }
+        .btn-primary:disabled { background: #ccc; cursor: not-allowed; box-shadow: none; }
+        .btn-secondary { background: #f5f5f5; color: #888; border: 1px solid #e5e5e5; margin-top: 10px; }
+        .btn-secondary:hover { background: #eee; color: #555; }
+        .btn-group { display: flex; flex-direction: column; gap: 0; margin-top: 24px; }
+
+        .info-box { background: #f8fdfb; border-left: 3px solid #4a9b7f; padding: 14px 16px; border-radius: 0 10px 10px 0; margin-bottom: 20px; }
+        .info-box p { font-size: 12px; color: #888; line-height: 1.6; }
+        .info-box a { color: #4a9b7f; text-decoration: none; font-weight: 500; }
+
+        .alert { padding: 12px 16px; border-radius: 10px; margin-bottom: 16px; font-size: 13px; display: none; font-weight: 500; }
+        .alert-success { background: #eef7f3; color: #3d8269; border: 1px solid #c8e6d8; }
+        .alert-error { background: #fff5f5; color: #d44; border: 1px solid #f5c6c6; }
+
+        .loading-spinner { display: none; text-align: center; padding: 20px; }
+        .loading-spinner .spinner { display: inline-block; width: 24px; height: 24px; border: 3px solid #eee; border-top: 3px solid #4a9b7f; border-radius: 50%; animation: spin 0.8s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loading-spinner span { display: block; font-size: 12px; color: #aaa; margin-top: 8px; }
+
+        /* ========== 미리보기 패널 ========== */
+        .preview-panel { background: white; border-radius: 16px; padding: 24px; border: 1px solid #eee; min-height: 600px; }
+        .preview-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid #f0f0f0; }
+        .preview-header h3 { font-size: 14px; font-weight: 600; color: #555; }
+        .preview-placeholder { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 500px; color: #ccc; }
+        .preview-placeholder .icon { font-size: 48px; margin-bottom: 12px; }
+        .preview-placeholder p { font-size: 13px; }
+
+        /* ========== 증명서 템플릿 ========== */
+        .cert-wrapper { display: flex; justify-content: center; }
+        .certificate {
+            width: 210mm; min-height: 297mm; background: white; padding: 20mm 25mm 25mm 25mm;
+            font-family: 'Noto Serif KR', 'Noto Sans KR', serif; position: relative; overflow: hidden;
+        }
+        .cert-title {
+            text-align: center; font-size: 32px; font-weight: 700; letter-spacing: 16px;
+            margin-bottom: 40px; padding-bottom: 0; color: #1a1a1a;
+        }
+        .cert-doc-number { font-size: 12px; color: #666; margin-bottom: 20px; font-family: 'Noto Sans KR', sans-serif; }
+        .cert-table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
+        .cert-table td {
+            padding: 14px 16px; font-size: 14px; border: 1px solid #d0d0d0; vertical-align: middle;
+        }
+        .cert-table .label-cell {
+            width: 90px; background: #f8fbff; font-weight: 500; color: #444;
+            text-align: center; font-size: 13px; letter-spacing: 4px; border-left: 3px solid #b8d4e8;
+        }
+        .cert-table .value-cell { color: #1a1a1a; font-weight: 400; min-width: 140px; }
+
+        .cert-watermark {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            font-size: 100px; color: rgba(0,0,0,0.04); font-weight: 700; letter-spacing: 8px;
+            pointer-events: none; font-family: 'Noto Sans KR', sans-serif; white-space: nowrap;
+        }
+        .cert-confirm {
+            text-align: center; font-size: 15px; color: #333; margin: 50px 0 40px;
+            font-weight: 400; letter-spacing: 1px;
+        }
+        .cert-date { text-align: center; font-size: 16px; color: #333; margin-bottom: 50px; letter-spacing: 2px; }
+        .cert-issuer {
+            text-align: center; display: flex; align-items: center; justify-content: center; gap: 16px;
+        }
+        .cert-company-name { font-size: 20px; font-weight: 600; color: #333; letter-spacing: 2px; }
+        .cert-stamp {
+            width: 70px; height: 70px; border: 3px solid #c0392b; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center; color: #c0392b;
+            font-size: 11px; font-weight: 700; text-align: center; line-height: 1.3;
+            transform: rotate(-15deg); opacity: 0.85; position: relative;
+        }
+        .cert-stamp::before {
+            content: ''; position: absolute; inset: 4px; border: 1.5px solid #c0392b; border-radius: 50%;
+        }
+
+        /* ========== 시트 연동 설정 ========== */
+        .sheet-config { margin-bottom: 20px; }
+        .sheet-status { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-radius: 8px; font-size: 12px; margin-top: 8px; }
+        .sheet-status.connected { background: #eef7f3; color: #3d8269; }
+        .sheet-status.disconnected { background: #fff5f5; color: #d44; }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; }
+        .connected .status-dot { background: #4a9b7f; }
+        .disconnected .status-dot { background: #d44; }
+
+        /* ========== 컬럼 매핑 ========== */
+        .mapping-section { margin-bottom: 20px; padding: 16px; background: #fafafa; border-radius: 10px; border: 1px solid #eee; }
+        .mapping-section h4 { font-size: 12px; font-weight: 600; color: #666; margin-bottom: 12px; }
+        .mapping-row { display: grid; grid-template-columns: 80px 1fr; gap: 8px; align-items: center; margin-bottom: 8px; }
+        .mapping-row span { font-size: 12px; color: #888; font-weight: 500; }
+        .mapping-row select { padding: 6px 10px; border: 1px solid #e5e5e5; border-radius: 6px; font-size: 12px; font-family: inherit; background: white; }
+
+        /* ========== 반응형 ========== */
+        @media (max-width: 900px) {
+            .panel-grid { grid-template-columns: 1fr; }
+            .settings-panel { position: static; }
+            .certificate { width: 100%; min-height: auto; padding: 10mm 12mm; transform: scale(0.85); transform-origin: top center; }
+            .header { padding: 16px 20px; }
+            .container { padding: 16px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <div>
+        <h1>증명서 발급 시스템</h1>
+        <div class="sub-info">재직증명서 · 경력증명서 · 퇴직증명서</div>
+    </div>
+    <div class="header-right">
+        <a href="index.html" class="back-btn">← 업무일지로 돌아가기</a>
+    </div>
+</div>
+
+<div class="container">
+    <div id="alertSuccess" class="alert alert-success"></div>
+    <div id="alertError" class="alert alert-error"></div>
+
+    <div class="panel-grid">
+        <!-- 왼쪽: 설정 패널 -->
+        <div class="settings-panel">
+            <div class="panel-title">발급 설정</div>
+            <div class="panel-desc">스프레드시트 연동 후 증명서를 발급하세요</div>
+
+            <!-- 스프레드시트 연동 -->
+            <div class="sheet-config">
+                <div class="form-group">
+                    <label>Google 스프레드시트 ID</label>
+                    <input type="text" id="sheetId" value="1sFcjTxnsARPQiZMVFb9vp05vMb9BMt0QPJXX9xY_5T4" placeholder="스프레드시트 ID 입력">
+                </div>
+                <div class="form-group">
+                    <label>시트 이름 (탭 이름)</label>
+                    <input type="text" id="sheetName" value="시트1" placeholder="예: Sheet1, 시트1">
+                </div>
+                <button class="btn btn-primary" onclick="connectSheet()" id="connectBtn">스프레드시트 연동</button>
+                <div id="sheetStatus" class="sheet-status disconnected" style="display:none;">
+                    <div class="status-dot"></div>
+                    <span id="statusText">연결 안됨</span>
+                </div>
+                <div class="loading-spinner" id="loadingSpinner">
+                    <div class="spinner"></div>
+                    <span>데이터를 불러오는 중...</span>
+                </div>
+            </div>
+
+            <div class="info-box">
+                <p>
+                    스프레드시트를 연동하려면:<br>
+                    1. Google Sheets에서 <strong>파일 → 공유 → 웹에 게시</strong><br>
+                    2. "게시" 버튼 클릭<br>
+                    3. 위 스프레드시트 ID가 자동 입력되어 있습니다
+                </p>
+            </div>
+
+            <!-- 컬럼 매핑 -->
+            <div class="mapping-section" id="mappingSection" style="display:none;">
+                <h4>컬럼 매핑 설정</h4>
+                <div class="mapping-row"><span>이름</span><select id="mapName"></select></div>
+                <div class="mapping-row"><span>생년월일</span><select id="mapBirth"></select></div>
+                <div class="mapping-row"><span>팀명</span><select id="mapTeam"></select></div>
+                <div class="mapping-row"><span>전화번호</span><select id="mapPhone"></select></div>
+                <div class="mapping-row"><span>직책</span><select id="mapPosition"></select></div>
+                <div class="mapping-row"><span>입사일</span><select id="mapJoinDate"></select></div>
+                <div class="mapping-row"><span>퇴사일</span><select id="mapLeaveDate"></select></div>
+                <div class="mapping-row"><span>주소</span><select id="mapAddress"></select></div>
+                <button class="btn btn-secondary" onclick="applyMapping()" style="margin-top:12px;">매핑 적용</button>
+            </div>
+
+            <!-- 발급 옵션 -->
+            <div id="issueSection" style="display:none;">
+                <div class="form-group">
+                    <label>직원 선택</label>
+                    <select id="employeeSelect">
+                        <option value="">-- 직원을 선택하세요 --</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>증명서 종류</label>
+                    <select id="certType">
+                        <option value="재직증명서">재직증명서</option>
+                        <option value="경력증명서">경력증명서</option>
+                        <option value="퇴직증명서">퇴직증명서</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>발급 목적</label>
+                    <input type="text" id="certPurpose" placeholder="예: 은행 제출용, 비자 신청용">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>발급일</label>
+                        <input type="date" id="certDate">
+                    </div>
+                    <div class="form-group">
+                        <label>문서번호</label>
+                        <input type="text" id="docNumber" placeholder="자동생성" readonly>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>발급 회사명</label>
+                    <input type="text" id="companyName" value="㈜ 앱솔브랩">
+                </div>
+
+                <div class="btn-group">
+                    <button class="btn btn-primary" onclick="generateCertificate()" id="generateBtn" disabled>미리보기 생성</button>
+                    <button class="btn btn-secondary" onclick="downloadPDF()" id="downloadBtn" style="display:none;">PDF 다운로드</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 오른쪽: 미리보기 패널 -->
+        <div class="preview-panel">
+            <div class="preview-header">
+                <h3>미리보기</h3>
+                <span id="previewInfo" style="font-size:12px; color:#aaa;"></span>
+            </div>
+
+            <div id="previewPlaceholder" class="preview-placeholder">
+                <div class="icon">📄</div>
+                <p>스프레드시트를 연동하고 직원을 선택하면<br>증명서 미리보기가 표시됩니다</p>
+            </div>
+
+            <div id="previewContent" style="display:none;">
+                <div class="cert-wrapper">
+                    <div class="certificate" id="certificateArea">
+                        <!-- 워터마크 -->
+                        <div class="cert-watermark" id="certWatermark">celimax</div>
+
+                        <!-- 제목 -->
+                        <div class="cert-title" id="certTitle">경 력 증 명 서</div>
+
+                        <!-- 문서번호 -->
+                        <div class="cert-doc-number" id="certDocNumber">문서번호. 251105-01</div>
+
+                        <!-- 정보 테이블 -->
+                        <table class="cert-table">
+                            <tr>
+                                <td class="label-cell">이 름</td>
+                                <td class="value-cell" id="certName"></td>
+                                <td class="label-cell">생년월일</td>
+                                <td class="value-cell" id="certBirth"></td>
+                            </tr>
+                            <tr>
+                                <td class="label-cell">팀 명</td>
+                                <td class="value-cell" id="certTeam"></td>
+                                <td class="label-cell">전화번호</td>
+                                <td class="value-cell" id="certPhone"></td>
+                            </tr>
+                            <tr>
+                                <td class="label-cell">직 책</td>
+                                <td class="value-cell" id="certPosition"></td>
+                                <td class="label-cell">재직기간</td>
+                                <td class="value-cell" id="certPeriod"></td>
+                            </tr>
+                            <tr>
+                                <td class="label-cell">주 소</td>
+                                <td class="value-cell" id="certAddress" colspan="3"></td>
+                            </tr>
+                            <tr>
+                                <td class="label-cell">목 적</td>
+                                <td class="value-cell" id="certPurposeDisplay" colspan="3"></td>
+                            </tr>
+                        </table>
+
+                        <!-- 확인 문구 -->
+                        <div class="cert-confirm">위 내용은 사실과 같음을 확인합니다.</div>
+
+                        <!-- 날짜 -->
+                        <div class="cert-date" id="certDateDisplay">2025. 11. 05</div>
+
+                        <!-- 발급자 -->
+                        <div class="cert-issuer">
+                            <span class="cert-company-name" id="certCompany">㈜ 앱솔브랩</span>
+                            <div class="cert-stamp" id="certStamp">
+                                <span>대표이사<br>직인</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// ========== 상태 관리 ==========
+let sheetData = [];       // 스프레드시트 원본 데이터
+let headers = [];          // 컬럼 헤더
+let employees = [];        // 매핑된 직원 데이터
+let columnMapping = {};    // 컬럼 매핑
+
+// 기본 매핑 키워드 (자동 매핑용)
+const MAPPING_KEYWORDS = {
+    name: ['이름', '성명', '직원명', 'name'],
+    birth: ['생년월일', '생일', '출생', 'birth', 'birthday'],
+    team: ['팀', '팀명', '부서', '부서명', 'team', 'department'],
+    phone: ['전화', '전화번호', '연락처', '핸드폰', '휴대폰', 'phone', 'tel', 'mobile'],
+    position: ['직책', '직급', '직위', '역할', 'position', 'title', 'role'],
+    joinDate: ['입사일', '입사', '시작일', '근무시작', 'join', 'start'],
+    leaveDate: ['퇴사일', '퇴사', '퇴직일', '종료일', 'leave', 'end', 'resign'],
+    address: ['주소', '거주지', '자택', 'address']
+};
+
+// ========== 초기화 ==========
+window.addEventListener('DOMContentLoaded', () => {
+    // 오늘 날짜 기본값
+    const today = new Date();
+    document.getElementById('certDate').value = today.toISOString().split('T')[0];
+    generateDocNumber(today);
+
+    // 직원 선택 이벤트
+    document.getElementById('employeeSelect').addEventListener('change', () => {
+        document.getElementById('generateBtn').disabled = !document.getElementById('employeeSelect').value;
+    });
+
+    // 증명서 종류 변경 시 재직기간 라벨 업데이트
+    document.getElementById('certType').addEventListener('change', () => {
+        if (document.getElementById('employeeSelect').value) {
+            generateCertificate();
+        }
+    });
+
+    // 날짜 변경 시 문서번호 자동 업데이트
+    document.getElementById('certDate').addEventListener('change', (e) => {
+        generateDocNumber(new Date(e.target.value));
+    });
+});
+
+function generateDocNumber(date) {
+    const y = String(date.getFullYear()).slice(2);
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    const seq = String(Math.floor(Math.random() * 99) + 1).padStart(2, '0');
+    document.getElementById('docNumber').value = `${y}${m}${d}-${seq}`;
+}
+
+// ========== 스프레드시트 연동 ==========
+async function connectSheet() {
+    const sheetId = document.getElementById('sheetId').value.trim();
+    const sheetName = document.getElementById('sheetName').value.trim() || '시트1';
+
+    if (!sheetId) {
+        showAlert('error', '스프레드시트 ID를 입력해주세요.');
+        return;
+    }
+
+    const spinner = document.getElementById('loadingSpinner');
+    const connectBtn = document.getElementById('connectBtn');
+    spinner.style.display = 'block';
+    connectBtn.disabled = true;
+    connectBtn.textContent = '연동 중...';
+
+    try {
+        // Google Sheets 공개 CSV 접근
+        const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`;
+        const response = await fetch(url);
+
+        if (!response.ok) {
+            throw new Error('스프레드시트에 접근할 수 없습니다. "웹에 게시" 설정을 확인해주세요.');
+        }
+
+        const csvText = await response.text();
+        parseCSV(csvText);
+
+        if (sheetData.length === 0) {
+            throw new Error('스프레드시트에 데이터가 없습니다.');
+        }
+
+        // 상태 업데이트
+        const statusEl = document.getElementById('sheetStatus');
+        statusEl.style.display = 'flex';
+        statusEl.className = 'sheet-status connected';
+        document.getElementById('statusText').textContent = `연결됨 · ${sheetData.length}명의 데이터`;
+
+        // 컬럼 매핑 설정
+        setupColumnMapping();
+        document.getElementById('mappingSection').style.display = 'block';
+
+        // 자동 매핑 시도
+        autoMapColumns();
+        applyMapping();
+
+        showAlert('success', `스프레드시트 연동 완료! ${sheetData.length}명의 데이터를 불러왔습니다.`);
+    } catch (err) {
+        const statusEl = document.getElementById('sheetStatus');
+        statusEl.style.display = 'flex';
+        statusEl.className = 'sheet-status disconnected';
+        document.getElementById('statusText').textContent = '연결 실패';
+        showAlert('error', err.message);
+    } finally {
+        spinner.style.display = 'none';
+        connectBtn.disabled = false;
+        connectBtn.textContent = '스프레드시트 연동';
+    }
+}
+
+function parseCSV(csv) {
+    const lines = [];
+    let current = '';
+    let inQuotes = false;
+
+    for (let i = 0; i < csv.length; i++) {
+        const ch = csv[i];
+        if (ch === '"') {
+            if (inQuotes && csv[i + 1] === '"') {
+                current += '"';
+                i++;
+            } else {
+                inQuotes = !inQuotes;
+            }
+        } else if (ch === ',' && !inQuotes) {
+            lines.push(current);
+            current = '';
+        } else if ((ch === '\n' || ch === '\r') && !inQuotes) {
+            if (current || lines.length > 0) {
+                lines.push(current);
+                if (headers.length === 0) {
+                    headers = lines.slice();
+                } else {
+                    if (lines.some(v => v.trim() !== '')) {
+                        const row = {};
+                        headers.forEach((h, idx) => { row[h] = lines[idx] || ''; });
+                        sheetData.push(row);
+                    }
+                }
+                lines.length = 0;
+                current = '';
+            }
+            if (ch === '\r' && csv[i + 1] === '\n') i++;
+        } else {
+            current += ch;
+        }
+    }
+    // 마지막 행 처리
+    if (current || lines.length > 0) {
+        lines.push(current);
+        if (headers.length === 0) {
+            headers = lines.slice();
+        } else {
+            if (lines.some(v => v.trim() !== '')) {
+                const row = {};
+                headers.forEach((h, idx) => { row[h] = lines[idx] || ''; });
+                sheetData.push(row);
+            }
+        }
+    }
+}
+
+function setupColumnMapping() {
+    const mappingIds = ['mapName', 'mapBirth', 'mapTeam', 'mapPhone', 'mapPosition', 'mapJoinDate', 'mapLeaveDate', 'mapAddress'];
+    const noneOption = '<option value="">-- 선택 안함 --</option>';
+    const headerOptions = headers.map(h => `<option value="${escapeHtml(h)}">${escapeHtml(h)}</option>`).join('');
+
+    mappingIds.forEach(id => {
+        document.getElementById(id).innerHTML = noneOption + headerOptions;
+    });
+}
+
+function autoMapColumns() {
+    const mapConfig = {
+        mapName: 'name', mapBirth: 'birth', mapTeam: 'team', mapPhone: 'phone',
+        mapPosition: 'position', mapJoinDate: 'joinDate', mapLeaveDate: 'leaveDate', mapAddress: 'address'
+    };
+
+    Object.entries(mapConfig).forEach(([selectId, key]) => {
+        const keywords = MAPPING_KEYWORDS[key];
+        const match = headers.find(h => keywords.some(k => h.toLowerCase().includes(k.toLowerCase())));
+        if (match) {
+            document.getElementById(selectId).value = match;
+        }
+    });
+}
+
+function applyMapping() {
+    columnMapping = {
+        name: document.getElementById('mapName').value,
+        birth: document.getElementById('mapBirth').value,
+        team: document.getElementById('mapTeam').value,
+        phone: document.getElementById('mapPhone').value,
+        position: document.getElementById('mapPosition').value,
+        joinDate: document.getElementById('mapJoinDate').value,
+        leaveDate: document.getElementById('mapLeaveDate').value,
+        address: document.getElementById('mapAddress').value,
+    };
+
+    // 직원 목록 갱신
+    employees = sheetData.map((row, idx) => ({
+        index: idx,
+        name: row[columnMapping.name] || `직원 ${idx + 1}`,
+        birth: row[columnMapping.birth] || '',
+        team: row[columnMapping.team] || '',
+        phone: row[columnMapping.phone] || '',
+        position: row[columnMapping.position] || '',
+        joinDate: row[columnMapping.joinDate] || '',
+        leaveDate: row[columnMapping.leaveDate] || '',
+        address: row[columnMapping.address] || '',
+        raw: row,
+    }));
+
+    // 직원 선택 드롭다운 갱신
+    const select = document.getElementById('employeeSelect');
+    select.innerHTML = '<option value="">-- 직원을 선택하세요 --</option>';
+    employees.forEach((emp, i) => {
+        const opt = document.createElement('option');
+        opt.value = i;
+        opt.textContent = `${emp.name}${emp.team ? ' (' + emp.team + ')' : ''}`;
+        select.appendChild(opt);
+    });
+
+    document.getElementById('issueSection').style.display = 'block';
+    document.getElementById('generateBtn').disabled = true;
+    showAlert('success', '컬럼 매핑이 적용되었습니다. 직원을 선택해주세요.');
+}
+
+// ========== 증명서 생성 ==========
+function generateCertificate() {
+    const empIdx = document.getElementById('employeeSelect').value;
+    if (empIdx === '') return;
+
+    const emp = employees[parseInt(empIdx)];
+    const certType = document.getElementById('certType').value;
+    const purpose = document.getElementById('certPurpose').value || '';
+    const issueDate = document.getElementById('certDate').value;
+    const docNumber = document.getElementById('docNumber').value;
+    const company = document.getElementById('companyName').value;
+
+    // 제목 설정
+    const titleMap = {
+        '재직증명서': '재 직 증 명 서',
+        '경력증명서': '경 력 증 명 서',
+        '퇴직증명서': '퇴 직 증 명 서',
+    };
+    document.getElementById('certTitle').textContent = titleMap[certType] || certType;
+
+    // 문서번호
+    document.getElementById('certDocNumber').textContent = `문서번호. ${docNumber}`;
+
+    // 직원 정보
+    document.getElementById('certName').textContent = emp.name;
+    document.getElementById('certBirth').textContent = formatDateKorean(emp.birth);
+    document.getElementById('certTeam').textContent = emp.team;
+    document.getElementById('certPhone').textContent = emp.phone;
+    document.getElementById('certPosition').textContent = emp.position;
+
+    // 재직기간
+    let period = '';
+    if (emp.joinDate) {
+        period = formatDateKorean(emp.joinDate) + ' ~ ';
+        if (certType === '퇴직증명서' && emp.leaveDate) {
+            period += formatDateKorean(emp.leaveDate);
+        } else if (certType === '경력증명서' && emp.leaveDate) {
+            period += formatDateKorean(emp.leaveDate);
+        } else {
+            period += '현재';
+        }
+    }
+    document.getElementById('certPeriod').textContent = period;
+
+    // 주소, 목적
+    document.getElementById('certAddress').textContent = emp.address;
+    document.getElementById('certPurposeDisplay').textContent = purpose;
+
+    // 날짜
+    if (issueDate) {
+        const d = new Date(issueDate);
+        document.getElementById('certDateDisplay').textContent =
+            `${d.getFullYear()}. ${String(d.getMonth() + 1).padStart(2, '0')}. ${String(d.getDate()).padStart(2, '0')}`;
+    }
+
+    // 회사명
+    document.getElementById('certCompany').textContent = company;
+
+    // 미리보기 표시
+    document.getElementById('previewPlaceholder').style.display = 'none';
+    document.getElementById('previewContent').style.display = 'block';
+    document.getElementById('previewInfo').textContent = `${emp.name} · ${certType}`;
+
+    // 다운로드 버튼 표시
+    document.getElementById('downloadBtn').style.display = 'block';
+}
+
+// ========== PDF 다운로드 ==========
+async function downloadPDF() {
+    const btn = document.getElementById('downloadBtn');
+    btn.disabled = true;
+    btn.textContent = 'PDF 생성 중...';
+
+    try {
+        const certEl = document.getElementById('certificateArea');
+
+        const canvas = await html2canvas(certEl, {
+            scale: 2,
+            useCORS: true,
+            backgroundColor: '#ffffff',
+            width: certEl.scrollWidth,
+            height: certEl.scrollHeight,
+        });
+
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF('p', 'mm', 'a4');
+        const pdfWidth = 210;
+        const pdfHeight = 297;
+        const imgData = canvas.toDataURL('image/png');
+
+        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+
+        // 파일명 생성
+        const empIdx = document.getElementById('employeeSelect').value;
+        const emp = employees[parseInt(empIdx)];
+        const certType = document.getElementById('certType').value;
+        const dateStr = document.getElementById('certDate').value.replace(/-/g, '');
+        const filename = `${certType}_${emp.name}_${dateStr}.pdf`;
+
+        pdf.save(filename);
+        showAlert('success', `${filename} 다운로드 완료!`);
+    } catch (err) {
+        showAlert('error', 'PDF 생성에 실패했습니다: ' + err.message);
+    } finally {
+        btn.disabled = false;
+        btn.textContent = 'PDF 다운로드';
+    }
+}
+
+// ========== 유틸리티 ==========
+function formatDateKorean(dateStr) {
+    if (!dateStr) return '';
+    // 다양한 날짜 형식 처리
+    const cleaned = dateStr.replace(/\./g, '-').replace(/\//g, '-').trim();
+    const parts = cleaned.split('-');
+    if (parts.length === 3) {
+        let [y, m, d] = parts;
+        if (y.length === 2) y = '19' + (parseInt(y) > 50 ? y : '20' + y);
+        return `${y}. ${m.padStart(2, '0')}. ${d.padStart(2, '0')}`;
+    }
+    return dateStr;
+}
+
+function escapeHtml(text) {
+    if (!text) return '';
+    const d = document.createElement('div');
+    d.textContent = text;
+    return d.innerHTML;
+}
+
+function showAlert(type, msg) {
+    const se = document.getElementById('alertSuccess');
+    const ee = document.getElementById('alertError');
+    se.style.display = 'none';
+    ee.style.display = 'none';
+    const el = type === 'success' ? se : ee;
+    el.textContent = msg;
+    el.style.display = 'block';
+    setTimeout(() => el.style.display = 'none', 5000);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
+
+</body>
+</html>
